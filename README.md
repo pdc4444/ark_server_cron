@@ -4,6 +4,8 @@ This is obviously a work in progress. The purpose of this project is to automati
 
 This has been developed & tested on Ubuntu 18.04 server. This script uses a bash script to onload the requirements of PHP and steamcmd. The rest of the script is run through ark_server_cron.php. You can run this code via as a scheduled task via cron tab to automate things like start, stop, restart, backup, and update.
 
+To install, clone the repository to your server and run the croninstaller bash script as sudo.
+
 Cron Tab Example:
 0 6 * * * /usr/bin/php /home/steam/ark_server_cron.php > /raid/local/ark/backup_logs/backup_`date +\%Y-\%m-\%d_\%H-\%M-\%S`.log 2>&1
 
