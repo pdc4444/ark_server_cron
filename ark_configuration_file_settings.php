@@ -9,7 +9,7 @@ function returnSettings()
 	array('Name' => 'battle_eye', 'Help' => 'Determines whether or not the server enables Battle Eye anti cheat', 'Default' => 'false', 'File' => 'shard_config.ini', 'Value_Type' => 't/f'),
 	array('Name' => 'SessionName', 'Help' => 'Define the name of the Ark server', 'Default' => 'Ark_Server', 'File' => 'GameUserSettings.ini', 'Header' => '[SessionSettings]'),
 	array('Name' => 'ServerPassword', 'Help' => 'Define the password for the Ark server', 'Default' => 'password', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]'),
-	array('Name' => 'MaxPlayers', 'Help' => 'Define the number of players that can join the server', 'Default' => '10', 'File' => 'GameUserSettings.ini', 'Header' => '[/Script/Engine.GameSession]'),
+	array('Name' => 'MaxPlayers', 'Help' => 'Define the number of players that can join the server', 'Default' => '10', 'File' => 'shard_config.ini'),
 	array('Name' => 'PreventDownloadSurvivors', 'Help' => '', 'Default' => 'false', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
 	array('Name' => 'PreventUploadSurvivors', 'Help' => '', 'Default' => 'false', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
 	array('Name' => 'PreventDownloadItems', 'Help' => '', 'Default' => 'false', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
@@ -212,3 +212,4 @@ function returnSettings()
 	);
 }
 ?>
+

@@ -432,7 +432,6 @@ Class CronControl
 					TimeStamp('Here is the user comment ' . $user_comment);
 					foreach($this->combined_server_info as $name => $server_info){
 						//Check to see if the server is running, if yes stop it and then take a backup
-						//This should be moved to backupSavedData()
 						if($name == $selection_array[$selection]['name'] && array_key_exists('PID',$server_info)){
 							$this->gracefullyStopTheServer($server_info['PID']);
 						}
@@ -1053,18 +1052,62 @@ Class ArkStartCommands
 			$shard_game_port = $this->extractShardSessionSettings($shard_location,'GamePort');
 			$shard_rcon_port = $this->extractShardSessionSettings($shard_location,'RCONPort');
 			$shard_battle_eye = $this->extractShardSessionSettings($shard_location,'battle_eye');
+			$max_players = $this->extractShardSessionSettings($shard_location,'MaxPlayers');
 			if($shard_map === FALSE || $shard_session_name === FALSE || $shard_query_port === FALSE || $shard_game_port === FALSE || $shard_rcon_port === FALSE){
 				TimeStamp("ERROR -> This shard is missing key configuration and will be skipped " . $shard_location);
 			} else {
 				$start_string = $shard_location . SELF::START_CMD_PART_BEGIN . $shard_map . SELF::START_CMD_PART_END;
-				$start_string = $start_string . '?QueryPort=' . $shard_query_port . '?Port=' . $shard_game_port . '?RCONPort=' . $shard_rcon_port . '?bRawSockets';
+				$start_string = $start_string . '?QueryPort=' . $shard_query_port . '?Port=' . $shard_game_port . '?RCONPort=' . $shard_rcon_port . '?MaxPlayers=' . $max_players . '?bRawSockets';
 				if($shard_battle_eye == 'false'){
 					$start_string = $start_string . ' -NoBattlEye';
 				}
+				$event = $this->determineActiveEvent();
+				if ($event) {
+					$start_string = $start_string . $event;
+				}
+				
 				$server_array[$shard_session_name] = $start_string;
 			}
 		}
 		return $server_array;
+	}
+
+	function determineActiveEvent()
+	{
+		/*
+		Event Activation
+		-ActiveEvent=<eventname>
+		eventname						Description														Dates Active
+		Easter							Allows for the Easter Event to be activated 					March 29th - April 10th
+		Arkaeology						Allows for the Arkaeology Event to be activated. 				June 15th - July 17th
+		ExtinctionChronicles			Allows for the Extinction Chronicles Event to be activated.		June 19th - November 6th
+		WinterWonderland				Allows for Winter Wonderland 2018 Event to be activated.		December 18th - January 7th
+		vday							Allows for Valentine's Day Event to be activated.				February 12th - February 18th
+		Summer							Allows for Summer Bash 2019 Event to be activated.				July 2nd - July 19th
+		FearEvolved						Allows for ARK: Fear Evolved 3 to be activated.					October 22nd - November 5th
+		*/
+
+		$events = [
+			['name' => 'Easter', 'start' => 'March 29', 'end' => 'April 10'],
+			['name' => 'Arkaeology', 'start' => 'June 15', 'end' => 'July 1'],
+			// ['name' => 'ExtinctionChronicles', 'start' => 'June 19', 'end' => 'November 6'],
+			['name' => 'WinterWonderland', 'start' => 'December 18', 'end' => 'January 7'],
+			['name' => 'vday', 'start' => 'February 12', 'end' => 'February 18'],
+			['name' => 'Summer', 'start' => 'July 2', 'end' => 'July 19'],
+			['name' => 'FearEvolved', 'start' => 'October 22', 'end' => 'November 5']
+		];
+
+		$now = new DateTime();
+		
+		foreach($events as $event){
+			$name = $event['name'];
+			$start = new DateTime(date('Y-m-d', strtotime($event['start'])));
+			$end = new DateTime(date('Y-m-d', strtotime($event['end'])));
+			if ($now >= $start && $now <= $end) {
+				return ' -ActiveEvent=' . $name;
+			}
+		}
+		return false;
 	}
 	
 	function findShardInstances($shard_directory)
@@ -1532,3 +1575,6 @@ function MoveModsToArkLocation($mod_ids, $steam_cmd_path, $root_server_files)
 	}	
 }
 ?>
+
+
+
