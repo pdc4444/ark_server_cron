@@ -52,9 +52,5 @@ fi
 sudo -H -u steam bash -c 'cp ark_server_cron.php /home/steam/ark_server_cron.php'
 sudo -H -u steam bash -c 'cp ark_configuration_file_settings.php /home/steam/ark_configuration_file_settings.php'
 
-#Adjust permissions and copy the Configuration Template to the steam user home directory
-sudo cp -r Saved/ /home/steam/
-sudo chown -R steam:steam /home/steam/Saved/
-
 #Run the cron as the steam user
 sudo su steam -c '/usr/bin/php /home/steam/ark_server_cron.php'
