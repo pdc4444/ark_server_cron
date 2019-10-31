@@ -42,6 +42,13 @@ function returnSettings()
 	array('Name' => 'TheMaxStructuresInRange', 'Help' => '', 'Default' => '10500.00000', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
 	array('Name' => 'StructurePreventResourceRadiusMultiplier', 'Help' => 'This adjusts the range at which player placed structures will affect resources from respawning', 'Default' => '1.000000', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
 	array('Name' => 'TribeNameChangeCooldown', 'Help' => '', 'Default' => '15.000000', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
+	//New as of 2019-10-31
+	array('Name' => 'AlwaysAllowStructurePickup', 'Help' => 'If true disables the timer on the quick-pickup system ', 'Default' => 'false', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
+	array('Name' => 'StructurePickupTimeAfterPlacement', 'Help' => 'Amount of time in seconds after placement that quick pickup is available', 'Default' => '30', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
+	array('Name' => 'AllowIntegratedSPlusStructures', 'Help' => 'If false disables all of the new S+ structures (intended mainly for letting unofficials that want to keep using the S+ mod version to keep using that without a ton of extra duplicate structures) ', 'Default' => 'true', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
+	array('Name' => 'StructurePickupHoldDuration', 'Help' => 'Used to specify the quick-pickup hold duration. 0 will disable and have instant pickup', 'Default' => '0.5', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
+	array('Name' => 'DinoCountMultiplier=5', 'Help' => 'Increases the maximum amount of wild Dino Spawns. Warning a value over 2 is considered very harmful!', 'Default' => '1', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
+	//End New
 	array('Name' => 'AllowHideDamageSourceFromLogs', 'Help' => '', 'Default' => 'false', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 't/f'),
 	array('Name' => 'RaidDinoCharacterFoodDrainMultiplier', 'Help' => '', 'Default' => '1.000000', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
 	array('Name' => 'PvEDinoDecayPeriodMultiplier', 'Help' => '', 'Default' => '1.000000', 'File' => 'GameUserSettings.ini', 'Header' => '[ServerSettings]', 'Value_Type' => 'numerical'),
