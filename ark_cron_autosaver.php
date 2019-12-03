@@ -18,7 +18,7 @@ TODO: Tie this script in with ark_server_cron.php instead of having it free floa
 define('BACKUP_FILE_LIMIT', 20);
 
 //Check to see if the script is already running, if so exit...
-$processes = shell_exec("ps -ef | grep -i 'ark_cron_autosaver.php' | grep -v 'grep'");
+$processes = shell_exec("ps -ef | grep -i 'ark_cron_autosaver.php' | grep -v 'grep' | grep -v 'bin/sh'");
 $process_array = explode("\n", trim($processes, "\n"));
 if (count($process_array) > 1) {
     exit("More than one script is active, exiting! \n");
