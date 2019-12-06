@@ -1494,7 +1494,6 @@ Class UpdateTheArkServer
 	{
 		$mod_string = '';
 		$mod_downloader = __DIR__ . DIRECTORY_SEPARATOR . 'Ark_Mod_Downloader' . DIRECTORY_SEPARATOR . 'Ark_Mod_Downloader.py';
-		echo $mod_downloader . "\n";
 		foreach($this->mods as $key => $array){
 			if(strpos($key, '_') === FALSE){
 				$mod_string = $mod_string . ' ' . $key;
