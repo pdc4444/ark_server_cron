@@ -343,7 +343,7 @@ Class CronControl
 		GLOBAL $root_server_files;
 		GLOBAL $server_shard_directory;
 		
-		$this->initiateArkBackup();
+		// $this->initiateArkBackup();
 		new UpdateTheArkServer($steam_cmd_path, $root_server_files, $server_shard_directory);
 	}
 	
@@ -849,7 +849,7 @@ Class CronControl
 	function preformBackupCommands($backup_path, $server_name, $shard_loc, $user_comment = NULL)
 	{
 		$today = new DateTime();
-		$now = $today->format('Y_m_d-h_i_s');
+		$now = $today->format('Y_m_d-H_i_s');
 		$folder_name = 'ark_backup_' . $server_name . '-' . $now . '-c-';
 		$saved_data_loc = $shard_loc . DIRECTORY_SEPARATOR . 'ShooterGame' . DIRECTORY_SEPARATOR . 'Saved';
 		$backup_loc = $backup_path . DIRECTORY_SEPARATOR . $folder_name;
@@ -1455,37 +1455,93 @@ Class BuildNewServerDirectory
 
 Class UpdateTheArkServer
 {
+	private $shards;
+	private $mods;
+	private $server_files;
+
+
 	function __construct($steam_cmd_path, $root_server_files, $shard_data_loc)
 	{
-		$this->performServerUpdate($steam_cmd_path, $root_server_files);
-		$this->updateShardSymlinks($root_server_files,$shard_data_loc);
+		$this->shards = ArkStartCommands::findShardInstances($shard_data_loc);
+		$this->server_files = $root_server_files;
+		$this->performServerUpdate($steam_cmd_path);
+		$this->mods = $this->compileModIds();
+		$this->updateMods();
+		$this->updateShardSymlinks();
 	}
 
-	function performServerUpdate($steam_cmd_path, $root_server_files)
+	function performServerUpdate($steam_cmd_path)
 	{
-		$shell_cmd = $steam_cmd_path . ' +login anonymous +force_install_dir ' . $root_server_files . ' +app_update 376030 validate +exit';
+		$shell_cmd = $steam_cmd_path . ' +login anonymous +force_install_dir ' . $this->server_files . ' +app_update 376030 validate +exit';
 		TimeStamp('Installing/Updating Ark Server Root Files');
 		shell_exec($shell_cmd);
 		TimeStamp('Ark Server Root files have finished installing/updating');
 	}
 	
-	function updateShardSymlinks($root_server_files, $shard_data_loc)
+	function updateShardSymlinks()
 	{
-		$shards = ArkStartCommands::findShardInstances($shard_data_loc);
-		foreach($shards as $shard_session_loc){
+		foreach($this->shards as $shard_session_loc){
 			TimeStamp('Now backing up data for the shard located here: ' . $shard_session_loc);
 			$saved_data_loc = $this->moveSavedDataToSafey($shard_session_loc);
 			$this->removeOldShardDirectory($shard_session_loc);
 			TimeStamp('Building New Server Directory for the shard located here: ' . $shard_session_loc);
-			$this->createNewShardDirectory($root_server_files,$shard_session_loc);
+			$this->createNewShardDirectory($shard_session_loc);
 			$this->replaceSavedData($saved_data_loc,$shard_session_loc);
 		}
 	}
+
+	function updateMods()
+	{
+		$mod_string = '';
+		$mod_downloader = __DIR__ . DIRECTORY_SEPARATOR . 'Ark_Mod_Downloader' . DIRECTORY_SEPARATOR . 'Ark_Mod_Downloader.py';
+		echo $mod_downloader . "\n";
+		foreach($this->mods as $key => $array){
+			if(strpos($key, '_') === FALSE){
+				$mod_string = $mod_string . ' ' . $key;
+			}
+		}
+		if($mod_string !== '' && file_exists($mod_downloader)){
+			$shell_cmd = '/usr/bin/python3 ' . $mod_downloader . ' --modids' . $mod_string . ' --workingdir ' . $this->server_files . DIRECTORY_SEPARATOR . ' > /dev/null 2>&1';
+			shell_exec($shell_cmd);
+		}
+	}
+
+	function compileModIds()
+	{
+		$mods = [];
+		foreach($this->shards as $shard_session_loc){
+			$shard_array = explode('/', trim($shard_session_loc));
+			$shard_array = array_reverse($shard_array);
+			$shard = current($shard_array);
+			TimeStamp('Checking to see if mods are installed');
+			$LinuxServerLoc = 'ShooterGame' . DIRECTORY_SEPARATOR . 'Saved' . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'LinuxServer';
+			$GameUserSettings = file_get_contents($shard_session_loc . DIRECTORY_SEPARATOR . $LinuxServerLoc . DIRECTORY_SEPARATOR . 'GameUserSettings.ini');
+			$GameUserSettingsArray = explode("\n",$GameUserSettings);
+			foreach($GameUserSettingsArray as $line){
+				if(strpos(strtolower($line),'activemods=') !== FALSE){
+					$mod_line = $line;
+				}
+			}
+			if(isset($mod_line)){
+				TimeStamp('Mods found, acquiring list for update');
+				$line_array = explode('=',$mod_line);
+				$mod_string = $line_array[1];
+				$mod_ids = explode(',',$mod_string);
+				foreach($mod_ids as $id){
+					if(!isset($mod_ids[$id])){
+						$mods[$id] = $id;
+					}
+					$mods[$shard][] = $id;
+				}
+			}
+		}
+		return $mods;
+	}
 	
-	function createNewShardDirectory($root_server_files,$shard_session_loc)
+	function createNewShardDirectory($shard_session_loc)
 	{
 		mkdir($shard_session_loc, 0777, FALSE);
-		new BuildNewServerDirectory($root_server_files, NULL, TRUE, $shard_session_loc);
+		new BuildNewServerDirectory($this->server_files, NULL, TRUE, $shard_session_loc);
 	}
 	
 	function replaceSavedData($saved_data_loc,$shard_session_loc)
