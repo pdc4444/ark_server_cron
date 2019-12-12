@@ -343,7 +343,7 @@ Class CronControl
 		GLOBAL $root_server_files;
 		GLOBAL $server_shard_directory;
 		
-		// $this->initiateArkBackup();
+		$this->initiateArkBackup();
 		new UpdateTheArkServer($steam_cmd_path, $root_server_files, $server_shard_directory);
 	}
 	
