@@ -52,7 +52,7 @@ while (true) {
             $shard_information[$shard]['saved_checksum'] = $current_checksum;
         }
     }
-    sleep(180);
+    sleep(3);
 }
 
 function rotateOldSaves($backup_dir)
