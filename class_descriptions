@@ -1,0 +1,68 @@
+Remember
+Classes should be nouns
+Functions should be verbs
+
+ArkStartCommands
+	Responsible for finding all shards
+	Builds an array for server status via process info commands (used by other objects)
+	Extracts shard specific settings and generates start commands to run on the server
+	Determines if there are any events that should be active given the date and the event array
+	
+	This class is output because it generates data used by other objects and takes no direct input
+
+BuildNewServerDirectory
+	Creates new shard directories
+	Finds the current number of shards and determines which shard number to create
+	Populates the new shard directories with symbolic links to the real game files, recursively
+	Looks like populateNewShardFolder might not be used
+	
+	This class is output because it generates data used by other objects and takes no direct input
+	
+CronControl
+	Creates a new ArkStartCommands Object and references its server array
+	References the ArkStartCommand server array object and combines it with user specificed server info for use in an interactive prompt
+	Responsible for the core features of the cron: start, stop, backup, restart, update
+	Responsible for interacting with the user via the command line and drawing echos to the the prompt
+	Responsible for handling non interactive input
+	
+	This is the biggest class in the file and contains most of the features. It is both input and output and needs to be segmented out
+	
+CronInstaller
+	Asks the user where they want to install the root server files and shards, as well as the backup directories
+	generates the general config file to house the information contained above
+	References the UpdateTheArkServer class to install the root server files
+	The startInstaller() function should probably just be a construct()
+	Has a public variable for $config_file that is defined outside of it's class (should just pass the data instead)
+	
+	This is both input and output. The class is used in CronStartup
+	
+CronStartup
+	find the general configuration file and loads the locations into memory
+	if no configuration files are found, the cron start an install.
+	
+	This is both input and output because it can initiate CronInstaller.
+	
+UpdateShardConfiguration
+	Deteremines if a save folder exists for the shard, if not it creates one and starts the server configuration process
+	Checks to see if a server name is already being used
+	Loads the ark_configuration_file_settings to ask the user how they want to define each setting
+	Organizes the settings to all be under their respective headers since the configuration file settings array is a mess
+	Can statically return the config file path for use in other classes
+	
+	This is both input and output because it creates configuration files based upon user interaction
+	
+UpdateTheArkServer
+	Uses steamcmd to update the root ark server files
+	References ArkStartCommands to find all the shard instances
+	Temporarily moves saved data and nukes the shard directory to rebuild the shard directories following the root file update
+	
+	This is output because it just updates the server.
+
+
+
+Symfony controllers are functions that read information from the request object and returns a response object
+https://symfony.com/doc/current/controller.html
+
+Symfony Services are objects (tools) waiting to be taken advantage of In your controller, you can "ask" for a service from the container by type-hinting an argument with the service's class or interface name. Want to log something? No problem:
+https://symfony.com/doc/current/service_container.html
+
