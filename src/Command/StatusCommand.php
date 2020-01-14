@@ -5,12 +5,19 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableCell;
+use Symfony\Component\Console\Helper\TableSeparator;
 use App\Service\ShardService;
+use App\Controller\UserConsoleController;
 
 class StatusCommand extends Command
 {
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'status';
+
+    CONST SERVICE_TITLE = "Ark Status";
+    CONST USER_QUESTION = 'Which shard would you like to see the status of?';
 
     public function __construct()
     {
@@ -39,54 +46,59 @@ class StatusCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // outputs multiple lines to the console (adding "\n" at the end of each line)
-        $output->writeln([
-            'Ark Status',
-            '============',
-            '',
-        ]);
-        // $section1->writeln("Here is text is the first section");
-
-        // the value returned by someMethod() can be an iterator (https://secure.php.net/iterator)
-        // that generates and returns the messages with the 'yield' PHP keyword
-        
-        // $section2->writeln("Here is text in the second section");
-        // $section3->writeln("Enter your name: " . $input->getArgument('name'));?
+        $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new ShardService();
         $raw_shard_data = $service->shards;
+
+        $data = $this->compileImportantInfo($raw_shard_data);
+        $shard_names = $data['shards'];
+        $important_shard_data = $data['data'];
+
+        $console_controller->question = SELF::USER_QUESTION;
+        $options = [
+            'Shards' => $shard_names,
+        ];
+        $console_controller->options_list = $options;
+        $answer = $console_controller->askQuestion($output);
+
+        $detail_table = new Table($output);
+
+        if (isset($answer['Shards'])) {
+            $console_controller->drawCliHeader();
+            $rows = [];
+            foreach ($important_shard_data[$answer['Shards']] as $row_header => $data) {
+                $rows[] = [$row_header, $data];
+            }
+            $detail_table
+                ->setHeaders(['Setting Name', 'Value'])
+                ->setRows($rows)
+            ;
+            $detail_table->setStyle('borderless');
+            $detail_table->render();
+        }
+        
+        return 0;
+    }
+
+    private function compileImportantInfo($raw_shard_data)
+    {
         $shard_names = [];
         $important_shard_data = [];
         foreach ($raw_shard_data as $shard_name => $shard_data) {
-            $shard_names[] = $shard_name;
-            $important_shard_data[$shard_name]['Query Port'] = $shard_data['shard_config.ini']['QueryPort'];
-            $important_shard_data[$shard_name]['Game Port'] = $shard_data['shard_config.ini']['GamePort'];
-            $important_shard_data[$shard_name]['RCON Port'] = $shard_data['shard_config.ini']['RCONPort'];
-            $import_shard_data[$shard_name]['Map'] = $shard_data['shard_config.ini']['Server_Map'];
-            $import_shard_data[$shard_name]['Session Name'] = $shard_data['GameUserSettings.ini']['SessionName'];
-            $import_shard_data[$shard_name]['Session Password'] = $shard_data['GameUserSettings.ini']['ServerPassword'];
-            $import_shard_data[$shard_name]['Max Players'] = $shard_data['shard_config.ini']['MaxPlayers'];
-            $import_shard_data[$shard_name]['Running'] = $shard_data['Status']['Running'];
-            $import_shard_data[$shard_name]['Process Id'] = $shard_data['Status']['Process Id'];
-        }
-        $output->writeln('The following shard(s) are installed. Which one would you like to view the status of?');
-        foreach ($shard_names as $shard_name) {
-            $output->writeln($shard_name);
-        }
-
-        $user_input = readLine('?: ');
-        foreach ($shard_names as $shard_name) {
-            if (strtolower($user_input) === $shard_name) {
-                foreach ($import_shard_data[$shard_name] as $item => $value) {
-                    $output->writeln($item . ': ' . $value);
-                }
+            if($shard_name != 'installed'){
+                $shard_names[] = $shard_name;
+                $important_shard_data[$shard_name]['Shard Number'] = $shard_name;
+                $important_shard_data[$shard_name]['Query Port'] = $shard_data['shard_config.ini']['QueryPort'];
+                $important_shard_data[$shard_name]['Game Port'] = $shard_data['shard_config.ini']['GamePort'];
+                $important_shard_data[$shard_name]['RCON Port'] = $shard_data['shard_config.ini']['RCONPort'];
+                $important_shard_data[$shard_name]['Map'] = $shard_data['shard_config.ini']['Server_Map'];
+                $important_shard_data[$shard_name]['Session Name'] = $shard_data['GameUserSettings.ini']['SessionName'];
+                $important_shard_data[$shard_name]['Session Password'] = $shard_data['GameUserSettings.ini']['ServerPassword'];
+                $important_shard_data[$shard_name]['Max Players'] = $shard_data['shard_config.ini']['MaxPlayers'];
+                $important_shard_data[$shard_name]['Running'] = $shard_data['Status']['Running'];
+                $important_shard_data[$shard_name]['Process Id'] = $shard_data['Status']['Process Id'];
             }
         }
-        // $result = $this->container->get(TestService::firstService());
-        // print_r($service);
-        // $output->writeln($service);
-
-        // $section2->overwrite('Hello ' . $name);
-        
-        return 0;
+        return ['shards' => $shard_names, 'data' => $important_shard_data];
     }
 }

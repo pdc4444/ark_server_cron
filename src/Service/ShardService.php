@@ -87,6 +87,7 @@ class ShardService
         $dir_contents = ErrorHandler::call('scandir', $this->server_shard_directory);
         foreach ($dir_contents as $key => $name) {
             if (strpos($name, 'shard') !== FALSE) {
+                $shard_info['installed'][] = $name;
                 $shard_info[$name]['Status'] = $this->determineIfRunning($name);
                 $shard_info[$name]['Path'] = $this->server_shard_directory . $name . DIRECTORY_SEPARATOR;
                 foreach (SELF::SHARD_CFG_FILES as $config_file) {
@@ -161,6 +162,7 @@ class ShardService
      * This function extracts the process id from a passed grep result via the preg_match function.
      * 
      * @param string $string - The string acquired from grep that contains running process info
+     * @return string $PID - The string of the extracted process id.
      */
 	private function isolatePID($string)
 	{
