@@ -380,6 +380,24 @@ Class CronControl
 			$this->executeArkServerStartCmd($server_name, $start_command);
 		}
 	}
+
+	function removeArkModFile()
+	{
+		//This is a quick hack to remove part of a mod before server start if it exists.
+		//In the upcoming refactor a service will handle this functionality which will NOT be nested in the executeServerStartCmd function :)
+		$remove_these = ['731604991/Misc/DedicatedStorage/BP_DedicatedStorage.uasset'];
+		foreach ($this->combined_server_info as $server_array) {
+			$shard_dir = $server_array['shard_dir'];
+			$mod_dir = $shard_dir . DIRECTORY_SEPARATOR . 'ShooterGame' . DIRECTORY_SEPARATOR . 'Content' . DIRECTORY_SEPARATOR . 'Mods';
+			foreach ($remove_these as $file) {
+				$location = $mod_dir . DIRECTORY_SEPARATOR . $file;
+				if (file_exists($location) !== FALSE) {
+					unlink($location);
+				}
+			}
+		}
+
+	}
 	
 	function buildUserSelection($combined_server_info)
 	{
@@ -720,6 +738,7 @@ Class CronControl
 	
 	function executeArkServerStartCmd($server_name, $start_command)
 	{
+		$this->removeArkModFile();
 		if($this->checkIfAlreadyRunning($server_name) === FALSE){
 			TimeStamp('Starting Server => '. $server_name);
 			$shell_cmd = 'nohup ' . $start_command . ' > /dev/null 2>&1 & ';
