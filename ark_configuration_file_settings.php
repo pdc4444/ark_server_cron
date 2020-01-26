@@ -71,7 +71,7 @@ function returnSettings()
 	array('Name' => 'MatingIntervalMultiplier', 'Help' => '', 'Default' => '0.15', 'File' => 'Game.ini', 'Header' => '[/script/shootergame.shootergamemode]', 'Value_Type' => 'numerical'),
 	array('Name' => 'BabyCuddleIntervalMultiplier', 'Help' => '', 'Default' => '0.0625', 'File' => 'Game.ini', 'Header' => '[/script/shootergame.shootergamemode]', 'Value_Type' => 'numerical'),
 	array('Name' => 'bDisableStructurePlacementCollision', 'Help' => '', 'Default' => 'true', 'File' => 'Game.ini', 'Header' => '[/script/shootergame.shootergamemode]', 'Value_Type' => 't/f'),
-	array('Name' => 'Server_Map', 'Help' => 'Map name "TheIsland", "TheCenter", "ScorchedEarth_P", "Ragnarok", "Aberration_P", "Extinction"', 'Default' => 'TheIsland', 'File' => 'shard_config.ini'),
+	array('Name' => 'Server_Map', 'Help' => 'Map name "TheIsland", "TheCenter", "ScorchedEarth_P", "Ragnarok", "Aberration_P", "Extinction", "Valguero_P"', 'Default' => 'TheIsland', 'File' => 'shard_config.ini'),
 	//Server Mandatory (These need to be in the config files for the server to run. The user doesn't really care about their settings)
 	array('Name' => 'MasterAudioVolume', 'Default' => '1.000000', 'Header' => '[/Script/ShooterGame.ShooterGameUserSettings]', 'File' => 'GameUserSettings.ini', 'Help' => '', 'Value_Type' => 'server_mandatory'),
 	array('Name' => 'MusicAudioVolume', 'Default' => '1.000000', 'Header' => '[/Script/ShooterGame.ShooterGameUserSettings]', 'File' => 'GameUserSettings.ini', 'Help' => '', 'Value_Type' => 'server_mandatory'),
