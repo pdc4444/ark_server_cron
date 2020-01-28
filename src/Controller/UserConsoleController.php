@@ -33,6 +33,7 @@ class UserConsoleController
     CONST MOVE_TERMINAL_CURSOR_UP_TWO_LINES = "\e[2A";
     CONST LIST_PROMPT = "\nInput a #, use n or p to switch pages";
     CONST LINE_BREAK = "\n";
+    CONST READLINE_PROMPT = "$: ";
 
     public $question;                //@string  The question to ask the user
     public $options_list;            //@array   The options list content ['column' => ['row1', 'row2'], 'column2' => [...], ...]
@@ -56,6 +57,9 @@ class UserConsoleController
      */
     public function __construct(string $header = '', object $output = NULL)
     {
+        if ($output === NULL) {
+            throw new \RuntimeException('$output is NULL and needs to be an instance of Symfony\'s OutputInterface object');
+        }
         $this->question = FALSE;
         $this->options_list = FALSE;
         $this->table = FALSE;
@@ -77,6 +81,9 @@ class UserConsoleController
     {
         if ($this->question !== FALSE) {
             if ($this->options_list !== FALSE) {
+                if (!is_array($this->options_list) || !is_array(current($this->options_list))) {
+                    throw new \RuntimeException('$this->options_list is not in the correct array format.');
+                }
                 $this->prepTableData();
                 $answer = FALSE;
                 $this->current_page = 1;
@@ -88,6 +95,7 @@ class UserConsoleController
                     $this->helpText();
                     $this->renderTable();
                     $user_response = $this->userInput();
+                    $this->resetCursor();
                     $answer = $this->processListAnswer($user_response);
                 }
             } else {
@@ -109,8 +117,7 @@ class UserConsoleController
      */
     private function userInput()
     {
-        $user_response = readline("$: ");
-        $this->resetCursor();
+        $user_response = readline(SELF::READLINE_PROMPT);
         return $user_response;
     }
 
@@ -188,6 +195,9 @@ class UserConsoleController
      */
     public function drawCliHeader()
     {
+        if ($this->cli_header == '') {
+            throw new \RuntimeException('Please set $this->cli_header before using drawCliHeader()');
+        }
         $this->clearScreen();
         $command_header_table = new Table($this->output);
         $command_header_table->setHeaders([$this->cli_header])->setRows([]);

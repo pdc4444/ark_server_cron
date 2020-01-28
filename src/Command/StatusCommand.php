@@ -9,6 +9,7 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
 use App\Service\ShardService;
+use App\Service\HelperService;
 use App\Controller\UserConsoleController;
 
 class StatusCommand extends Command
@@ -50,55 +51,26 @@ class StatusCommand extends Command
         $service = new ShardService();
         $raw_shard_data = $service->shards;
 
-        $data = $this->compileImportantInfo($raw_shard_data);
-        $shard_names = $data['shards'];
-        $important_shard_data = $data['data'];
+        $important_shard_data = HelperService::summarizeShardInfo($raw_shard_data);
 
         $console_controller->question = SELF::USER_QUESTION;
-        $options = [
-            'Shards' => $shard_names,
-        ];
-        $console_controller->options_list = $options;
+        $console_controller->options_list = ['Shards' => HelperService::extractShardNames($raw_shard_data['installed'])];
         $answer = $console_controller->askQuestion($output);
+        $selected_shard = HelperService::translateAnswer($answer['Shards'], $raw_shard_data['installed']);
 
         $detail_table = new Table($output);
-
-        if (isset($answer['Shards'])) {
-            $console_controller->drawCliHeader();
-            $rows = [];
-            foreach ($important_shard_data[$answer['Shards']] as $row_header => $data) {
-                $rows[] = [$row_header, $data];
-            }
-            $detail_table
-                ->setHeaders(['Setting Name', 'Value'])
-                ->setRows($rows)
-            ;
-            $detail_table->setStyle('borderless');
-            $detail_table->render();
+        $console_controller->drawCliHeader();
+        $rows = [];
+        foreach ($important_shard_data[$selected_shard] as $row_header => $data) {
+            $rows[] = [$row_header, $data];
         }
+        $detail_table
+            ->setHeaders(['Setting Name', 'Value'])
+            ->setRows($rows)
+        ;
+        $detail_table->setStyle('borderless');
+        $detail_table->render();
         
         return 0;
-    }
-
-    private function compileImportantInfo($raw_shard_data)
-    {
-        $shard_names = [];
-        $important_shard_data = [];
-        foreach ($raw_shard_data as $shard_name => $shard_data) {
-            if($shard_name != 'installed'){
-                $shard_names[] = $shard_name;
-                $important_shard_data[$shard_name]['Shard Number'] = $shard_name;
-                $important_shard_data[$shard_name]['Query Port'] = $shard_data['shard_config.ini']['QueryPort'];
-                $important_shard_data[$shard_name]['Game Port'] = $shard_data['shard_config.ini']['GamePort'];
-                $important_shard_data[$shard_name]['RCON Port'] = $shard_data['shard_config.ini']['RCONPort'];
-                $important_shard_data[$shard_name]['Map'] = $shard_data['shard_config.ini']['Server_Map'];
-                $important_shard_data[$shard_name]['Session Name'] = $shard_data['GameUserSettings.ini']['SessionName'];
-                $important_shard_data[$shard_name]['Session Password'] = $shard_data['GameUserSettings.ini']['ServerPassword'];
-                $important_shard_data[$shard_name]['Max Players'] = $shard_data['shard_config.ini']['MaxPlayers'];
-                $important_shard_data[$shard_name]['Running'] = $shard_data['Status']['Running'];
-                $important_shard_data[$shard_name]['Process Id'] = $shard_data['Status']['Process Id'];
-            }
-        }
-        return ['shards' => $shard_names, 'data' => $important_shard_data];
     }
 }
