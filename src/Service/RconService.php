@@ -2,6 +2,7 @@
 // src/Service/RconService.php
 namespace App\Service;
 use App\Service\ShardService;
+use App\Service\HelperService;
 use Symfony\Component\ErrorHandler\Errorhandler; //Not sure if I need this right now
 
 class RconService extends ShardService
@@ -30,20 +31,20 @@ class RconService extends ShardService
     {
         $this->errorCheck($choice);
         $this->ip = '127.0.0.1'; //Hard coded for local since it is unexpected that we would remotely connect to RCON
-        $this->port = $choice['shard_config.ini']['RCONPort'];
-        $this->password = $choice['GameUserSettings.ini']['ServerSettings']['ServerAdminPassword'];
+        $this->port = $choice[HelperService::SHARD_CONFIG]['RCONPort'];
+        $this->password = $choice[HelperService::GAME_CONFIG]['ServerSettings']['ServerAdminPassword'];
         $this->openSocket();
     }
 
     private function errorCheck($choice)
     {
-        $game_user_settings_path = "\nFile Path = " . $choice['cfg_file_path']['GameUserSettings.ini'];
-        $shard_config_path = "\nFile Path = " . $choice['cfg_file_path']['shard_config.ini'];
-        if (!isset($choice['GameUserSettings.ini']) || !isset($choice['GameUserSettings.ini']['ServerSettings']['RCONEnabled']) || $choice['GameUserSettings.ini']['ServerSettings']['RCONEnabled'] !== 'true') {
+        $game_user_settings_path = "\nFile Path = " . $choice['cfg_file_path'][HelperService::GAME_CONFIG];
+        $shard_config_path = "\nFile Path = " . $choice['cfg_file_path'][HelperService::SHARD_CONFIG];
+        if (!isset($choice[HelperService::GAME_CONFIG]) || !isset($choice[HelperService::GAME_CONFIG]['ServerSettings']['RCONEnabled']) || $choice[HelperService::GAME_CONFIG]['ServerSettings']['RCONEnabled'] !== 'true') {
             throw new \RuntimeException(SELF::SET_SERVER_SETTING_ERROR . $game_user_settings_path);
-        } else if (!isset($choice['shard_config.ini']) || !isset($choice['shard_config.ini']['RCONPort']) || $choice['shard_config.ini']['RCONPort'] == '') {
+        } else if (!isset($choice[HelperService::SHARD_CONFIG]) || !isset($choice[HelperService::SHARD_CONFIG]['RCONPort']) || $choice[HelperService::SHARD_CONFIG]['RCONPort'] == '') {
             throw new \RuntimeException(SELF::SET_SERVER_PORT_ERROR . $shard_config_path);
-        } else if (!isset($choice['GameUserSettings.ini']) || !isset($choice['GameUserSettings.ini']['ServerSettings']['ServerAdminPassword']) || $choice['GameUserSettings.ini']['ServerSettings']['ServerAdminPassword'] == '') {
+        } else if (!isset($choice[HelperService::GAME_CONFIG]) || !isset($choice[HelperService::GAME_CONFIG]['ServerSettings']['ServerAdminPassword']) || $choice[HelperService::GAME_CONFIG]['ServerSettings']['ServerAdminPassword'] == '') {
             throw new \RuntimeException(SELF::SET_SERVER_PASSWORD_ERROR . $game_user_settings_path);
         } else if (!isset($choice['Status']) || !isset($choice['Status']['Running']) || $choice['Status']['Running'] !== 'Yes') {
             throw new \RuntimeException(SELF::SET_SERVER_STATUS_ERROR);

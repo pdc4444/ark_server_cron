@@ -2,6 +2,7 @@
 // src/Service/StartService.php
 namespace App\Service;
 use App\Service\ShardService;
+use App\Service\HelperService;
 use Symfony\Component\ErrorHandler\Errorhandler;
 
 /**
@@ -48,12 +49,12 @@ class StartService extends ShardService
         if ($user_choice == 'All') {
             foreach ($this->start_commands as $shard_name => $cmd) {
                 $result = $this->executeStartCommand($shard_name, $cmd);
-                $session_name = $this->shards[$shard_name][SELF::GAME_CONFIG]['SessionSettings']['SessionName'];
+                $session_name = $this->shards[$shard_name][HelperService::GAME_CONFIG]['SessionSettings']['SessionName'];
                 ($result) ? $started_servers[$session_name] = TRUE : $started_servers[$session_name] = FALSE;
             }
         } else {
             $result = $this->executeStartCommand($user_choice, $this->start_commands[$user_choice]);
-            $session_name = $this->shards[$user_choice][SELF::GAME_CONFIG]['SessionSettings']['SessionName'];
+            $session_name = $this->shards[$user_choice][HelperService::GAME_CONFIG]['SessionSettings']['SessionName'];
             ($result) ? $started_servers[$session_name] = TRUE : $started_servers[$session_name] = FALSE;
         }
         return $started_servers;
@@ -87,13 +88,13 @@ class StartService extends ShardService
         foreach ($this->shards as $key_name => $data) {
             if (strpos($key_name, 'shard_') !== FALSE && $this->errorCheck($this->shards[$key_name], $key_name) === FALSE) {
                 $string = $this->shards[$key_name]['Path'] . SELF::BINARY_PATH;
-                $string = $string . $this->shards[$key_name][SELF::SHARD_CONFIG]['Server_Map'] . SELF::LISTEN;
-                $string = $string . SELF::QUERY . $this->shards[$key_name][SELF::SHARD_CONFIG]['QueryPort'];
-                $string = $string . SELF::PORT . $this->shards[$key_name][SELF::SHARD_CONFIG]['GamePort'];
-                $string = $string . SELF::RCON . $this->shards[$key_name][SELF::SHARD_CONFIG]['RCONPort'];
-                $string = $string . SELF::PLAYERS . $this->shards[$key_name][SELF::SHARD_CONFIG]['MaxPlayers'];
+                $string = $string . $this->shards[$key_name][HelperService::SHARD_CONFIG]['Server_Map'] . SELF::LISTEN;
+                $string = $string . SELF::QUERY . $this->shards[$key_name][HelperService::SHARD_CONFIG]['QueryPort'];
+                $string = $string . SELF::PORT . $this->shards[$key_name][HelperService::SHARD_CONFIG]['GamePort'];
+                $string = $string . SELF::RCON . $this->shards[$key_name][HelperService::SHARD_CONFIG]['RCONPort'];
+                $string = $string . SELF::PLAYERS . $this->shards[$key_name][HelperService::SHARD_CONFIG]['MaxPlayers'];
                 $string = $string . SELF::RAW_SOCKETS;
-                if ($this->shards[$key_name][SELF::SHARD_CONFIG]['battle_eye'] == 'false') {
+                if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['battle_eye'] == 'false') {
                     $string = $string  . SELF::BATTLE_EYE;
                 }
                 $event = $this->determineActiveEvent();
@@ -115,19 +116,19 @@ class StartService extends ShardService
      */
     private function errorCheck($shard_data, $shard_name)
     {
-        if (!isset($shard_data[SELF::SHARD_CONFIG])) {
-            throw new \RuntimeException(SELF::SHARD_CONFIG . SELF::NOT_SET);
+        if (!isset($shard_data[HelperService::SHARD_CONFIG])) {
+            throw new \RuntimeException(HelperService::SHARD_CONFIG . SELF::NOT_SET);
         }
         $required_numeric_keys = ['QueryPort', 'GamePort', 'RCONPort', 'MaxPlayers'];
         foreach ($required_numeric_keys as $key) {
-            if (!isset($shard_data[SELF::SHARD_CONFIG][$key])) {
+            if (!isset($shard_data[HelperService::SHARD_CONFIG][$key])) {
                 throw new \RuntimeException($key . SELF::NOT_SET);
             }
-            if (!is_numeric($shard_data[SELF::SHARD_CONFIG][$key])) {
+            if (!is_numeric($shard_data[HelperService::SHARD_CONFIG][$key])) {
                 throw new \RuntimeException($key . SELF::NOT_SET);
             }
         }
-        if (!isset($shard_data[SELF::SHARD_CONFIG]['Server_Map']) || empty($shard_data[SELF::SHARD_CONFIG]['Server_Map'])) {
+        if (!isset($shard_data[HelperService::SHARD_CONFIG]['Server_Map']) || empty($shard_data[HelperService::SHARD_CONFIG]['Server_Map'])) {
             throw new \RuntimeException('Server_Map' . SELF::NOT_SET);
         }
         $binary = trim($shard_data['Path'] . SELF::BINARY_PATH);

@@ -2,6 +2,7 @@
 // src/Service/ShardService.php
 namespace App\Service;
 use Symfony\Component\ErrorHandler\Errorhandler;
+use App\Service\HelperService;
 ErrorHandler::register();
 
 /**
@@ -12,7 +13,7 @@ ErrorHandler::register();
 class ShardService
 {
     CONST SHARD_CFG_PATH = DIRECTORY_SEPARATOR . 'ShooterGame' . DIRECTORY_SEPARATOR . 'Saved' . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'LinuxServer';
-    CONST SHARD_CFG_FILES = ['shard_config.ini', 'GameUserSettings.ini', 'Game.ini'];
+    CONST SHARD_CFG_FILES = [HelperService::SHARD_CONFIG, HelperService::GAME_CONFIG, HelperService::GAME_INI];
     CONST GAME_INI_OVERRIDES = ['ConfigOverrideItemCraftingCosts', 
                                     'OverrideNamedEngramEntries', 
                                     'ConfigOverrideItemMaxQuantity', 
@@ -112,7 +113,7 @@ class ShardService
                     $shard_info[$name]['cfg_file_path'][$config_file] = $cfg_file_path;
                     $shard_info[$name][$config_file] = $this->loadIniFile($cfg_file_path);
                 }
-                $shard_info['installed'][$name] = $shard_info[$name]['GameUserSettings.ini']['SessionSettings']['SessionName'];
+                $shard_info['installed'][$name] = $shard_info[$name][HelperService::GAME_CONFIG]['SessionSettings']['SessionName'];
             }
         }
         $this->shards = $shard_info;
