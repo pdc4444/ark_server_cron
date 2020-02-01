@@ -40,7 +40,7 @@ class StopService extends ShardService
                     $pids[] = $pid;
                 }
             } else {
-                $pids[] = $this->running_shards[$pid];
+                $pids[] = $this->running_shards[$shard];
             }
             if ($sleep_counter >= 30) {
                 foreach ($pids as $server_process) {

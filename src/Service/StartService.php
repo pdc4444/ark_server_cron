@@ -88,13 +88,13 @@ class StartService extends ShardService
         foreach ($this->shards as $key_name => $data) {
             if (strpos($key_name, 'shard_') !== FALSE && $this->errorCheck($this->shards[$key_name], $key_name) === FALSE) {
                 $string = $this->shards[$key_name]['Path'] . SELF::BINARY_PATH;
-                $string = $string . $this->shards[$key_name][HelperService::SHARD_CONFIG]['Server_Map'] . SELF::LISTEN;
-                $string = $string . SELF::QUERY . $this->shards[$key_name][HelperService::SHARD_CONFIG]['QueryPort'];
-                $string = $string . SELF::PORT . $this->shards[$key_name][HelperService::SHARD_CONFIG]['GamePort'];
-                $string = $string . SELF::RCON . $this->shards[$key_name][HelperService::SHARD_CONFIG]['RCONPort'];
-                $string = $string . SELF::PLAYERS . $this->shards[$key_name][HelperService::SHARD_CONFIG]['MaxPlayers'];
+                $string = $string . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['Server_Map'] . SELF::LISTEN;
+                $string = $string . SELF::QUERY . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['QueryPort'];
+                $string = $string . SELF::PORT . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['GamePort'];
+                $string = $string . SELF::RCON . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['RCONPort'];
+                $string = $string . SELF::PLAYERS . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['MaxPlayers'];
                 $string = $string . SELF::RAW_SOCKETS;
-                if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['battle_eye'] == 'false') {
+                if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['battle_eye'] == 'false') {
                     $string = $string  . SELF::BATTLE_EYE;
                 }
                 $event = $this->determineActiveEvent();
@@ -121,14 +121,14 @@ class StartService extends ShardService
         }
         $required_numeric_keys = ['QueryPort', 'GamePort', 'RCONPort', 'MaxPlayers'];
         foreach ($required_numeric_keys as $key) {
-            if (!isset($shard_data[HelperService::SHARD_CONFIG][$key])) {
+            if (!isset($shard_data[HelperService::SHARD_CONFIG]['ShardSettings'][$key])) {
                 throw new \RuntimeException($key . SELF::NOT_SET);
             }
-            if (!is_numeric($shard_data[HelperService::SHARD_CONFIG][$key])) {
+            if (!is_numeric($shard_data[HelperService::SHARD_CONFIG]['ShardSettings'][$key])) {
                 throw new \RuntimeException($key . SELF::NOT_SET);
             }
         }
-        if (!isset($shard_data[HelperService::SHARD_CONFIG]['Server_Map']) || empty($shard_data[HelperService::SHARD_CONFIG]['Server_Map'])) {
+        if (!isset($shard_data[HelperService::SHARD_CONFIG]['ShardSettings']['Server_Map']) || empty($shard_data[HelperService::SHARD_CONFIG]['ShardSettings']['Server_Map'])) {
             throw new \RuntimeException('Server_Map' . SELF::NOT_SET);
         }
         $binary = trim($shard_data['Path'] . SELF::BINARY_PATH);
