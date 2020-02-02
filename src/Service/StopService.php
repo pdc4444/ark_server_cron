@@ -34,7 +34,9 @@ class StopService extends ShardService
         while (TRUE) {
             $pids = [];
             $this->refreshRunningShards();
-            empty($this->running_shards) ? exit() : FALSE;
+            if (empty($this->running_shards)) {
+                return;
+            }
             if ($shard == 'All') {
                 foreach ($this->running_shards as $name => $pid) {
                     $pids[] = $pid;

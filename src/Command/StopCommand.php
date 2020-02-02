@@ -17,6 +17,7 @@ class StopCommand extends Command
     CONST SERVICE_TITLE = "Ark Server Cron";
     CONST USER_QUESTION = 'Which shard would you like to stop?';
     CONST ATTEMPT = "Trying to stop (this/these) server shard(s): %T\n(This can take up to 90 seconds)";
+    CONST NONE_RUNNING = 'No shards are currently running!';
 
     public function __construct()
     {
@@ -35,7 +36,7 @@ class StopCommand extends Command
         $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new StopService();
         if (empty($service->running_shards)) {
-            $output->writeln('No shards are currently running!');
+            $output->writeln(SELF::NONE_RUNNING);
         } else {
             $console_controller->question = SELF::USER_QUESTION;
             $console_controller->options_list = ['Shard' => array_merge(['All'], array_keys($service->running_shards))];
