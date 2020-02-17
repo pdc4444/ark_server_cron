@@ -37,6 +37,7 @@ class ShardService
 	public $backup_path;                 //The path to where backups are stored
 	public $root_server_files;           //The path to where the root server files are stored
     public $server_shard_directory;      //The path to where the server shard directories are stored
+    public $steam_cmd;                   //The path to where the steamcmd binary is stored
 	public $shards;                      //The path to where each individual shard is stored
 	
     /**
@@ -90,7 +91,10 @@ class ShardService
 				break;
 			case 'ark_server_backup':
 				$this->backup_path = $value;
-				break;
+                break;
+            case 'steam_cmd':
+                $this->steam_cmd = $value;
+                break;
 		}
     }
 
