@@ -32,3 +32,14 @@ Bugs:
 The shards are numbered from 1, if you have 3 shards setup (1,2, and 3) and you delete 2 the next time you try to create a new shard the cron will tell you that files exist for shard 3 already. This is because we're counting the shards in the shard directory instead of determing the shard number attached to the directory.
 You can issue the stop command which will result in an undefined index for servers that are not running.
 Restore is not currently working
+
+
+Setup refactor branch on fresh Ubuntu install
+
+sudo add-apt-repository ppa:ondrej/php
+sudo apt-get update
+sudo apt-get install php7.3
+sudo apt-get install php7.3-xml
+git clone https://github.com/pdc4444/ark_server_cron.git
+cd into the cloned directory and then
+composer install
