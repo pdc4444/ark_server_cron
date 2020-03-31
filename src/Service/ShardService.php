@@ -38,6 +38,7 @@ class ShardService
 	public $root_server_files;           //The path to where the root server files are stored
     public $server_shard_directory;      //The path to where the server shard directories are stored
     public $steam_cmd;                   //The path to where the steamcmd binary is stored
+    public $cluster_directory = FALSE;   //The path to where the cluster data is stored
 	public $shards;                      //The path to where each individual shard is stored
 	
     /**
@@ -94,6 +95,9 @@ class ShardService
                 break;
             case 'steam_cmd':
                 $this->steam_cmd = $value;
+                break;
+            case 'ark_server_cluster':
+                $this->cluster_directory = $value;
                 break;
 		}
     }

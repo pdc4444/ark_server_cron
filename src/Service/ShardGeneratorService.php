@@ -9,6 +9,7 @@ ErrorHandler::register();
 class ShardGeneratorService extends ShardService
 {
 	CONST USER_CFG_STRING = 'Please define the value for this setting: ';
+	CONST INVALID_VALUE = 'Invalid value detected, please insert a valid setting value.';
 
 	private $generated_shard_name;
 	private $generated_shard_location;
@@ -71,7 +72,15 @@ class ShardGeneratorService extends ShardService
 					$console_controller->options_list = ['?' => ['Default', 'True', 'False']];
 				}
 
-				$answer = $console_controller->askQuestion();
+				$value_verified = FALSE;
+				while ($value_verified === FALSE) {
+					$answer = $console_controller->askQuestion();
+					$value_verified = $this->verifyValue($setting_name, $answer);
+					if ($value_verified === FALSE && strpos($console_controller->help_text, SELF::INVALID_VALUE) === FALSE) {
+						$console_controller->help_text = $console_controller->help_text . $console_controller::LINE_BREAK . SELF::INVALID_VALUE;
+					}
+				}
+
 				is_array($answer) ? $choice = $answer['?'] : $choice = $answer;
 				if ($choice == 'Default' || $choice == '') {
 					$choice = $default;
@@ -80,6 +89,21 @@ class ShardGeneratorService extends ShardService
 				$this->writeConfiguration($line, $location);
 			}
 		}
+	}
+
+	private function verifyValue($setting_name, $answer)
+	{
+		switch ($setting_name) {
+			case 'SessionName':
+				foreach ($this->shards as $shard_name => $shard_data) {
+					//The SessionName must be unique, this is the logic that enforces it
+					if (strpos($shard_name, 'shard_') !== FALSE && $shard_data[HelperService::GAME_CONFIG]['SessionSettings']['SessionName'] == $answer) {
+						return FALSE;
+					}
+				}
+				break;
+		}
+		return TRUE;
 	}
 
 	private function writeConfiguration($line, $file_location)

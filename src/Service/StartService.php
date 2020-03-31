@@ -24,6 +24,8 @@ class StartService extends ShardService
     CONST COMMAND_TAIL = ' > /dev/null 2>&1 & ';
     CONST NOT_SET = ' is not set! Check your shard configuration files for errors!';
     CONST BINARY_MISSING = 'ShooterGameServer binary is missing or corrupted for ';
+    CONST CLUSTER_OVERRIDE = ' -NoTransferFromFiltering -ClusterDirOverride=';
+    CONST CLUSTER_ID = ' -clusterid=';
     
     private $start_commands = [];
 
@@ -95,7 +97,10 @@ class StartService extends ShardService
                 $string = $string . SELF::PLAYERS . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['MaxPlayers'];
                 $string = $string . SELF::RAW_SOCKETS;
                 if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['battle_eye'] == 'false') {
-                    $string = $string  . SELF::BATTLE_EYE;
+                    $string = $string . SELF::BATTLE_EYE;
+                }
+                if ($this->cluster_directory !== FALSE && strtolower($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['Cluster_Mode']) == 'true') {
+                    $string = $string . SELF::CLUSTER_OVERRIDE . $this->cluster_directory . SELF::CLUSTER_ID . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['Cluster_ID'];
                 }
                 $event = $this->determineActiveEvent();
                 if ($event) {
