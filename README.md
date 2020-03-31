@@ -40,6 +40,13 @@ sudo add-apt-repository ppa:ondrej/php
 sudo apt-get update
 sudo apt-get install php7.3
 sudo apt-get install php7.3-xml
+sudo apt install php-dev
+sudo apt-get install libzip-dev
+sudo apt install php-pear
+sudo pecl channel-update pecl.php.net
+sudo pecl install zip
+sudo su root -c "echo 'extension=zip.so' >> /etc/php/7.3/cli/php.ini"
+sudo su root -c "echo 'extension=zip.so' >> /etc/php/7.4/cli/php.ini"
 git clone https://github.com/pdc4444/ark_server_cron.git
 cd into the cloned directory and then
 composer install
