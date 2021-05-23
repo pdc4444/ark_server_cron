@@ -59,7 +59,7 @@ fi
 sudo -H -u steam bash -c 'cp ark_server_cron.php /home/steam/ark_server_cron.php'
 sudo -H -u steam bash -c 'cp ark_configuration_file_settings.php /home/steam/ark_configuration_file_settings.php'
 sudo -H -u steam bash -c 'cp ark_cron_autosaver.php /home/steam/ark_cron_autosaver.php'
-sudo -H -u steam bash -c 'cp -r Ark_Mod_Downloader.py /home/steam/''
+sudo -H -u steam bash -c 'cp -r Ark_Mod_Downloader /home/steam/'
 
 #Run the cron as the steam user
 sudo su steam -c '/usr/bin/php /home/steam/ark_server_cron.php'

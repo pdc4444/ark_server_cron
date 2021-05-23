@@ -479,7 +479,7 @@ Class CronControl
 			exit("Quitting...\n");
 		} else {
 			echo "Invalid selection! Please try again!\n";
-			$this->userFunctionInteractive($server_array, $command);
+			$this->userFunctionInteractive($combined_server_info, $command);
 		}
 	}
 	
@@ -1489,9 +1489,12 @@ Class UpdateTheArkServer
 		$this->updateShardSymlinks();
 	}
 
-	function performServerUpdate($steam_cmd_path)
+	function performServerUpdate($steam_cmd_path, $server_files = false)
 	{
-		$shell_cmd = $steam_cmd_path . ' +login anonymous +force_install_dir ' . $this->server_files . ' +app_update 376030 validate +exit';
+		if ($server_files === FALSE) {
+			$server_files = $this->server_files;
+		}
+		$shell_cmd = $steam_cmd_path . ' +login anonymous +force_install_dir ' . $server_files . ' +app_update 376030 validate +exit';
 		TimeStamp('Installing/Updating Ark Server Root Files');
 		shell_exec($shell_cmd);
 		TimeStamp('Ark Server Root files have finished installing/updating');
