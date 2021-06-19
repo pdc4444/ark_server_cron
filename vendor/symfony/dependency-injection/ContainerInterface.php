@@ -24,11 +24,11 @@ use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
  */
 interface ContainerInterface extends PsrContainerInterface
 {
-    const RUNTIME_EXCEPTION_ON_INVALID_REFERENCE = 0;
-    const EXCEPTION_ON_INVALID_REFERENCE = 1;
-    const NULL_ON_INVALID_REFERENCE = 2;
-    const IGNORE_ON_INVALID_REFERENCE = 3;
-    const IGNORE_ON_UNINITIALIZED_REFERENCE = 4;
+    public const RUNTIME_EXCEPTION_ON_INVALID_REFERENCE = 0;
+    public const EXCEPTION_ON_INVALID_REFERENCE = 1;
+    public const NULL_ON_INVALID_REFERENCE = 2;
+    public const IGNORE_ON_INVALID_REFERENCE = 3;
+    public const IGNORE_ON_UNINITIALIZED_REFERENCE = 4;
 
     /**
      * Sets a service.
@@ -48,7 +48,7 @@ interface ContainerInterface extends PsrContainerInterface
      *
      * @see Reference
      */
-    public function get($id, int $invalidBehavior = self::EXCEPTION_ON_INVALID_REFERENCE);
+    public function get(string $id, int $invalidBehavior = self::EXCEPTION_ON_INVALID_REFERENCE);
 
     /**
      * Returns true if the given service is defined.
@@ -57,7 +57,7 @@ interface ContainerInterface extends PsrContainerInterface
      *
      * @return bool true if the service is defined, false otherwise
      */
-    public function has($id);
+    public function has(string $id);
 
     /**
      * Check for whether or not a service has been initialized.
@@ -71,7 +71,7 @@ interface ContainerInterface extends PsrContainerInterface
      *
      * @param string $name The parameter name
      *
-     * @return mixed The parameter value
+     * @return array|bool|float|int|string|null The parameter value
      *
      * @throws InvalidArgumentException if the parameter is not defined
      */

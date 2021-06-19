@@ -7,6 +7,7 @@ class HelperService
     CONST SHARD_CONFIG = 'shard_config.ini';
     CONST GAME_CONFIG = 'GameUserSettings.ini';
     CONST GAME_INI = 'Game.ini';
+    CONST CRON_CONFIG = 'ark_server_cron.cfg';
 
     public function extractShardNames($shard_array)
     {   

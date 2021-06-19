@@ -39,7 +39,8 @@ class ShardService
     public $server_shard_directory;      //The path to where the server shard directories are stored
     public $steam_cmd;                   //The path to where the steamcmd binary is stored
     public $cluster_directory = FALSE;   //The path to where the cluster data is stored
-	public $shards;                      //The path to where each individual shard is stored
+    public $shards;                      //The path to where each individual shard is stored
+    public $root_dir;                    //The directory where the ark server cron files live
 	
     /**
      * Start the service by checking to see if the configuration file is present.
@@ -48,12 +49,12 @@ class ShardService
      */
 	public function __construct()
 	{
-        $root_dir = str_replace('src/Service', '', __DIR__);
-        $this->config_file = $root_dir . 'ark_server_cron.cfg';
+        $this->root_dir = str_replace('src/Service', '', __DIR__);
+        $this->config_file = $this->root_dir . HelperService::CRON_CONFIG;
 		if (file_exists($this->config_file)) {
             $this->loadConfigFile();
             $this->compileShardInfo();
-		} else {
+		} else if (strpos(get_class($this),'InstallService') === FALSE) {
             throw new \RuntimeException('ark_server_cron.cfg not found! Have you run the installer yet?');
         }
 	}

@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\DependencyInjection;
 
+use Composer\InstalledVersions;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Symfony\Component\Config\Resource\ClassExistenceResource;
 use Symfony\Component\Config\Resource\ComposerResource;
@@ -20,11 +21,13 @@ use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Config\Resource\GlobResource;
 use Symfony\Component\Config\Resource\ReflectionClassResource;
 use Symfony\Component\Config\Resource\ResourceInterface;
+use Symfony\Component\DependencyInjection\Argument\AbstractArgument;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Argument\RewindableGenerator;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Argument\ServiceLocator;
 use Symfony\Component\DependencyInjection\Argument\ServiceLocatorArgument;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\DependencyInjection\Compiler\Compiler;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
@@ -122,11 +125,16 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
 
     private $autoconfiguredInstanceof = [];
 
+    /**
+     * @var callable[]
+     */
+    private $autoconfiguredAttributes = [];
+
     private $removedIds = [];
 
     private $removedBindingIds = [];
 
-    private static $internalTypes = [
+    private const INTERNAL_TYPES = [
         'int' => true,
         'float' => true,
         'string' => true,
@@ -144,10 +152,10 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     {
         parent::__construct($parameterBag);
 
-        $this->trackResources = interface_exists('Symfony\Component\Config\Resource\ResourceInterface');
+        $this->trackResources = interface_exists(ResourceInterface::class);
         $this->setDefinition('service_container', (new Definition(ContainerInterface::class))->setSynthetic(true)->setPublic(true));
-        $this->setAlias(PsrContainerInterface::class, new Alias('service_container', false));
-        $this->setAlias(ContainerInterface::class, new Alias('service_container', false));
+        $this->setAlias(PsrContainerInterface::class, new Alias('service_container', false))->setDeprecated('symfony/dependency-injection', '5.1', $deprecationMessage = 'The "%alias_id%" autowiring alias is deprecated. Define it explicitly in your app if you want to keep using it.');
+        $this->setAlias(ContainerInterface::class, new Alias('service_container', false))->setDeprecated('symfony/dependency-injection', '5.1', $deprecationMessage);
     }
 
     /**
@@ -210,7 +218,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             return $this->extensionsByNs[$name];
         }
 
-        throw new LogicException(sprintf('Container extension "%s" is not registered', $name));
+        throw new LogicException(sprintf('Container extension "%s" is not registered.', $name));
     }
 
     /**
@@ -333,7 +341,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             return null;
         }
 
-        if (isset(self::$internalTypes[$class])) {
+        if (isset(self::INTERNAL_TYPES[$class])) {
             return null;
         }
 
@@ -356,7 +364,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
 
         if ($this->trackResources) {
             if (!$classReflector) {
-                $this->addResource($resource ?: new ClassExistenceResource($class, false));
+                $this->addResource($resource ?? new ClassExistenceResource($class, false));
             } elseif (!$classReflector->isInternal()) {
                 $path = $classReflector->getFileName();
 
@@ -510,10 +518,8 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
      *
      * @return bool true if the service is defined, false otherwise
      */
-    public function has($id)
+    public function has(string $id)
     {
-        $id = (string) $id;
-
         return isset($this->definitions[$id]) || isset($this->aliasDefinitions[$id]) || parent::has($id);
     }
 
@@ -532,9 +538,9 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
      *
      * @see Reference
      */
-    public function get($id, int $invalidBehavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE)
+    public function get(string $id, int $invalidBehavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE)
     {
-        if ($this->isCompiled() && isset($this->removedIds[$id = (string) $id]) && ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE >= $invalidBehavior) {
+        if ($this->isCompiled() && isset($this->removedIds[$id]) && ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE >= $invalidBehavior) {
             return parent::get($id);
         }
 
@@ -567,7 +573,8 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             $alias = $this->aliasDefinitions[$id];
 
             if ($alias->isDeprecated()) {
-                @trigger_error($alias->getDeprecationMessage($id), E_USER_DEPRECATED);
+                $deprecation = $alias->getDeprecation($id);
+                trigger_deprecation($deprecation['package'], $deprecation['version'], $deprecation['message']);
             }
 
             return $this->doGet((string) $alias, $invalidBehavior, $inlineServices, $isConstructorArgument);
@@ -668,6 +675,14 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             }
 
             $this->autoconfiguredInstanceof[$interface] = $childDefinition;
+        }
+
+        foreach ($container->getAutoconfiguredAttributes() as $attribute => $configurator) {
+            if (isset($this->autoconfiguredAttributes[$attribute])) {
+                throw new InvalidArgumentException(sprintf('"%s" has already been autoconfigured and merge() does not support merging autoconfiguration for the same attribute.', $attribute));
+            }
+
+            $this->autoconfiguredAttributes[$attribute] = $configurator;
         }
     }
 
@@ -809,7 +824,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     public function setAlias(string $alias, $id)
     {
         if ('' === $alias || '\\' === $alias[-1] || \strlen($alias) !== strcspn($alias, "\0\r\n'")) {
-            throw new InvalidArgumentException(sprintf('Invalid alias id: "%s"', $alias));
+            throw new InvalidArgumentException(sprintf('Invalid alias id: "%s".', $alias));
         }
 
         if (\is_string($id)) {
@@ -945,11 +960,11 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     public function setDefinition(string $id, Definition $definition)
     {
         if ($this->isCompiled()) {
-            throw new BadMethodCallException('Adding definition to a compiled container is not allowed');
+            throw new BadMethodCallException('Adding definition to a compiled container is not allowed.');
         }
 
         if ('' === $id || '\\' === $id[-1] || \strlen($id) !== strcspn($id, "\0\r\n'")) {
-            throw new InvalidArgumentException(sprintf('Invalid service id: "%s"', $id));
+            throw new InvalidArgumentException(sprintf('Invalid service id: "%s".', $id));
         }
 
         unset($this->aliasDefinitions[$id], $this->removedIds[$id]);
@@ -1036,7 +1051,8 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
         }
 
         if ($definition->isDeprecated()) {
-            @trigger_error($definition->getDeprecationMessage($id), E_USER_DEPRECATED);
+            $deprecation = $definition->getDeprecation($id);
+            trigger_deprecation($deprecation['package'], $deprecation['version'], $deprecation['message']);
         }
 
         if ($tryProxy && $definition->isLazy() && !$tryProxy = !($proxy = $this->proxyInstantiator) || $proxy instanceof RealServiceInstantiator) {
@@ -1064,7 +1080,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             if (\is_array($factory)) {
                 $factory = [$this->doResolveServices($parameterBag->resolveValue($factory[0]), $inlineServices, $isConstructorArgument), $factory[1]];
             } elseif (!\is_string($factory)) {
-                throw new RuntimeException(sprintf('Cannot create service "%s" because of invalid factory', $id));
+                throw new RuntimeException(sprintf('Cannot create service "%s" because of invalid factory.', $id));
             }
         }
 
@@ -1079,16 +1095,16 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
                 $r = new \ReflectionClass($factory[0]);
 
                 if (0 < strpos($r->getDocComment(), "\n * @deprecated ")) {
-                    @trigger_error(sprintf('The "%s" service relies on the deprecated "%s" factory class. It should either be deprecated or its factory upgraded.', $id, $r->name), E_USER_DEPRECATED);
+                    trigger_deprecation('', '', 'The "%s" service relies on the deprecated "%s" factory class. It should either be deprecated or its factory upgraded.', $id, $r->name);
                 }
             }
         } else {
             $r = new \ReflectionClass($parameterBag->resolveValue($definition->getClass()));
 
-            $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs($arguments);
+            $service = null === $r->getConstructor() ? $r->newInstance() : $r->newInstanceArgs(array_values($arguments));
 
             if (!$definition->isDeprecated() && 0 < strpos($r->getDocComment(), "\n * @deprecated ")) {
-                @trigger_error(sprintf('The "%s" service relies on the deprecated "%s" class. It should either be deprecated or its implementation upgraded.', $id, $r->name), E_USER_DEPRECATED);
+                trigger_deprecation('', '', 'The "%s" service relies on the deprecated "%s" class. It should either be deprecated or its implementation upgraded.', $id, $r->name);
             }
         }
 
@@ -1130,7 +1146,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             }
 
             if (!\is_callable($callable)) {
-                throw new InvalidArgumentException(sprintf('The configure callable for class "%s" is not a callable.', \get_class($service)));
+                throw new InvalidArgumentException(sprintf('The configure callable for class "%s" is not a callable.', get_debug_type($service)));
             }
 
             $callable($service);
@@ -1164,7 +1180,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
                 return $this->resolveServices($reference);
             };
         } elseif ($value instanceof IteratorArgument) {
-            $value = new RewindableGenerator(function () use ($value) {
+            $value = new RewindableGenerator(function () use ($value, &$inlineServices) {
                 foreach ($value->getValues() as $k => $v) {
                     foreach (self::getServiceConditionals($v) as $s) {
                         if (!$this->has($s)) {
@@ -1172,12 +1188,12 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
                         }
                     }
                     foreach (self::getInitializedConditionals($v) as $s) {
-                        if (!$this->doGet($s, ContainerInterface::IGNORE_ON_UNINITIALIZED_REFERENCE)) {
+                        if (!$this->doGet($s, ContainerInterface::IGNORE_ON_UNINITIALIZED_REFERENCE, $inlineServices)) {
                             continue 2;
                         }
                     }
 
-                    yield $k => $this->resolveServices($v);
+                    yield $k => $this->doResolveServices($v, $inlineServices);
                 }
             }, function () use ($value): int {
                 $count = 0;
@@ -1215,6 +1231,8 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
             $value = $this->getParameter((string) $value);
         } elseif ($value instanceof Expression) {
             $value = $this->getExpressionLanguage()->evaluate($value, ['container' => $this]);
+        } elseif ($value instanceof AbstractArgument) {
+            throw new RuntimeException($value->getTextWithContext());
         }
 
         return $value;
@@ -1305,6 +1323,16 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     }
 
     /**
+     * Registers an attribute that will be used for autoconfiguring annotated classes.
+     *
+     * The configurator will receive a ChildDefinition instance, an instance of the attribute and the corresponding \ReflectionClass, in that order.
+     */
+    public function registerAttributeForAutoconfiguration(string $attributeClass, callable $configurator): void
+    {
+        $this->autoconfiguredAttributes[$attributeClass] = $configurator;
+    }
+
+    /**
      * Registers an autowiring alias that only binds to a specific argument name.
      *
      * The argument name is derived from $name if provided (from $id otherwise)
@@ -1314,7 +1342,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
      */
     public function registerAliasForArgument(string $id, string $type, string $name = null): Alias
     {
-        $name = lcfirst(str_replace(' ', '', ucwords(preg_replace('/[^a-zA-Z0-9\x7f-\xff]++/', ' ', $name ?? $id))));
+        $name = (new Target($name ?? $id))->name;
 
         if (!preg_match('/^[a-zA-Z_\x7f-\xff]/', $name)) {
             throw new InvalidArgumentException(sprintf('Invalid argument name "%s" for service "%s": the first character must be a letter.', $name, $id));
@@ -1331,6 +1359,14 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     public function getAutoconfiguredInstanceof()
     {
         return $this->autoconfiguredInstanceof;
+    }
+
+    /**
+     * @return callable[]
+     */
+    public function getAutoconfiguredAttributes(): array
+    {
+        return $this->autoconfiguredAttributes;
     }
 
     /**
@@ -1387,7 +1423,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
                         $completed = true;
                     } else {
                         if (!\is_string($resolved) && !is_numeric($resolved)) {
-                            throw new RuntimeException(sprintf('A string value must be composed of strings and/or numbers, but found parameter "env(%s)" of type %s inside string value "%s".', $env, \gettype($resolved), $this->resolveEnvPlaceholders($value)));
+                            throw new RuntimeException(sprintf('A string value must be composed of strings and/or numbers, but found parameter "env(%s)" of type "%s" inside string value "%s".', $env, get_debug_type($resolved), $this->resolveEnvPlaceholders($value)));
                         }
                         $value = str_ireplace($placeholder, $resolved, $value);
                     }
@@ -1432,6 +1468,39 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     }
 
     /**
+     * Checks whether a class is available and will remain available in the "no-dev" mode of Composer.
+     *
+     * When parent packages are provided and if any of them is in dev-only mode,
+     * the class will be considered available even if it is also in dev-only mode.
+     */
+    final public static function willBeAvailable(string $package, string $class, array $parentPackages): bool
+    {
+        if (!class_exists($class) && !interface_exists($class, false) && !trait_exists($class, false)) {
+            return false;
+        }
+
+        if (!class_exists(InstalledVersions::class) || !InstalledVersions::isInstalled($package) || InstalledVersions::isInstalled($package, false)) {
+            return true;
+        }
+
+        // the package is installed but in dev-mode only, check if this applies to one of the parent packages too
+
+        $rootPackage = InstalledVersions::getRootPackage()['name'] ?? '';
+
+        if ('symfony/symfony' === $rootPackage) {
+            return true;
+        }
+
+        foreach ($parentPackages as $parentPackage) {
+            if ($rootPackage === $parentPackage || (InstalledVersions::isInstalled($parentPackage) && !InstalledVersions::isInstalled($parentPackage, false))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Gets removed binding ids.
      *
      * @internal
@@ -1450,7 +1519,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     {
         if ($this->hasDefinition($id)) {
             foreach ($this->getDefinition($id)->getBindings() as $key => $binding) {
-                list(, $bindingId) = $binding->getValues();
+                [, $bindingId] = $binding->getValues();
                 $this->removedBindingIds[(int) $bindingId] = true;
             }
         }
@@ -1582,7 +1651,7 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     private function getExpressionLanguage(): ExpressionLanguage
     {
         if (null === $this->expressionLanguage) {
-            if (!class_exists('Symfony\Component\ExpressionLanguage\ExpressionLanguage')) {
+            if (!class_exists(\Symfony\Component\ExpressionLanguage\ExpressionLanguage::class)) {
                 throw new LogicException('Unable to use expressions as the Symfony ExpressionLanguage component is not installed.');
             }
             $this->expressionLanguage = new ExpressionLanguage(null, $this->expressionLanguageProviders);
@@ -1594,14 +1663,14 @@ class ContainerBuilder extends Container implements TaggedContainerInterface
     private function inVendors(string $path): bool
     {
         if (null === $this->vendors) {
-            $resource = new ComposerResource();
-            $this->vendors = $resource->getVendors();
-            $this->addResource($resource);
+            $this->vendors = (new ComposerResource())->getVendors();
         }
         $path = realpath($path) ?: $path;
 
         foreach ($this->vendors as $vendor) {
             if (0 === strpos($path, $vendor) && false !== strpbrk(substr($path, \strlen($vendor), 1), '/'.\DIRECTORY_SEPARATOR)) {
+                $this->addResource(new FileResource($vendor.'/composer/installed.json'));
+
                 return true;
             }
         }

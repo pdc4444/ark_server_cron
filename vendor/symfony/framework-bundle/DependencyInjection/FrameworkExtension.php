@@ -84,6 +84,8 @@ use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Transport\AmqpExt\AmqpTransportFactory;
+use Symfony\Component\Messenger\Transport\RedisExt\RedisTransportFactory;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Mime\MimeTypeGuesserInterface;
@@ -311,6 +313,17 @@ class FrameworkExtension extends Extension
             $container->removeDefinition('console.command.messenger_failed_messages_retry');
             $container->removeDefinition('console.command.messenger_failed_messages_show');
             $container->removeDefinition('console.command.messenger_failed_messages_remove');
+            $container->removeDefinition('cache.messenger.restart_workers_signal');
+
+            if ($container->hasDefinition('messenger.transport.amqp.factory') && class_exists(AmqpTransportFactory::class)) {
+                $container->getDefinition('messenger.transport.amqp.factory')
+                    ->addTag('messenger.transport_factory');
+            }
+
+            if ($container->hasDefinition('messenger.transport.redis.factory') && class_exists(RedisTransportFactory::class)) {
+                $container->getDefinition('messenger.transport.redis.factory')
+                    ->addTag('messenger.transport_factory');
+            }
         }
 
         if ($this->httpClientConfigEnabled = $this->isConfigEnabled($container, $config['http_client'])) {
@@ -390,8 +403,6 @@ class FrameworkExtension extends Extension
         $container->registerForAutoconfiguration(ArgumentValueResolverInterface::class)
             ->addTag('controller.argument_value_resolver');
         $container->registerForAutoconfiguration(AbstractController::class)
-            ->addTag('controller.service_arguments');
-        $container->registerForAutoconfiguration('Symfony\Bundle\FrameworkBundle\Controller\Controller')
             ->addTag('controller.service_arguments');
         $container->registerForAutoconfiguration(DataCollectorInterface::class)
             ->addTag('data_collector');
@@ -906,6 +917,7 @@ class FrameworkExtension extends Extension
             // Set the handler class to be null
             $container->getDefinition('session.storage.native')->replaceArgument(1, null);
             $container->getDefinition('session.storage.php_bridge')->replaceArgument(0, null);
+            $container->setAlias('session.handler', 'session.handler.native_file')->setPrivate(true);
         } else {
             $container->resolveEnvPlaceholders($config['handler_id'], null, $usedEnvs);
 
@@ -1074,7 +1086,7 @@ class FrameworkExtension extends Extension
             if ($container->fileExists($dir)) {
                 $dirs[] = $transPaths[] = $dir;
             } else {
-                throw new \UnexpectedValueException(sprintf('%s defined in translator.paths does not exist or is not a directory', $dir));
+                throw new \UnexpectedValueException(sprintf('"%s" defined in translator.paths does not exist or is not a directory.', $dir));
             }
         }
 
@@ -1567,6 +1579,14 @@ class FrameworkExtension extends Extension
         }
 
         $loader->load('messenger.xml');
+
+        if (class_exists(AmqpTransportFactory::class)) {
+            $container->getDefinition('messenger.transport.amqp.factory')->addTag('messenger.transport_factory');
+        }
+
+        if (class_exists(RedisTransportFactory::class)) {
+            $container->getDefinition('messenger.transport.redis.factory')->addTag('messenger.transport_factory');
+        }
 
         if (null === $config['default_bus'] && 1 === \count($config['buses'])) {
             $config['default_bus'] = key($config['buses']);

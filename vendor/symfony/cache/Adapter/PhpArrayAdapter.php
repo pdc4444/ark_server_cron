@@ -37,8 +37,8 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     private $file;
     private $keys;
     private $values;
-    private $createCacheItem;
 
+    private static $createCacheItem;
     private static $valuesCache = [];
 
     /**
@@ -49,7 +49,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     {
         $this->file = $file;
         $this->pool = $fallbackPool;
-        $this->createCacheItem = \Closure::bind(
+        self::$createCacheItem ?? self::$createCacheItem = \Closure::bind(
             static function ($key, $value, $isHit) {
                 $item = new CacheItem();
                 $item->key = $key;
@@ -119,7 +119,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     public function getItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', \is_object($key) ? \get_class($key) : \gettype($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
         if (null === $this->values) {
             $this->initialize();
@@ -142,9 +142,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
             }
         }
 
-        $f = $this->createCacheItem;
-
-        return $f($key, $value, $isHit);
+        return (self::$createCacheItem)($key, $value, $isHit);
     }
 
     /**
@@ -154,7 +152,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     {
         foreach ($keys as $key) {
             if (!\is_string($key)) {
-                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', \is_object($key) ? \get_class($key) : \gettype($key)));
+                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
             }
         }
         if (null === $this->values) {
@@ -172,7 +170,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     public function hasItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', \is_object($key) ? \get_class($key) : \gettype($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
         if (null === $this->values) {
             $this->initialize();
@@ -189,7 +187,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     public function deleteItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', \is_object($key) ? \get_class($key) : \gettype($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
         if (null === $this->values) {
             $this->initialize();
@@ -210,7 +208,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
 
         foreach ($keys as $key) {
             if (!\is_string($key)) {
-                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', \is_object($key) ? \get_class($key) : \gettype($key)));
+                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
             }
 
             if (isset($this->keys[$key])) {
@@ -291,29 +289,32 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
      * Store an array of cached values.
      *
      * @param array $values The cached values
+     *
+     * @return string[] A list of classes to preload on PHP 7.4+
      */
     public function warmUp(array $values)
     {
         if (file_exists($this->file)) {
             if (!is_file($this->file)) {
-                throw new InvalidArgumentException(sprintf('Cache path exists and is not a file: %s.', $this->file));
+                throw new InvalidArgumentException(sprintf('Cache path exists and is not a file: "%s".', $this->file));
             }
 
             if (!is_writable($this->file)) {
-                throw new InvalidArgumentException(sprintf('Cache file is not writable: %s.', $this->file));
+                throw new InvalidArgumentException(sprintf('Cache file is not writable: "%s".', $this->file));
             }
         } else {
             $directory = \dirname($this->file);
 
             if (!is_dir($directory) && !@mkdir($directory, 0777, true)) {
-                throw new InvalidArgumentException(sprintf('Cache directory does not exist and cannot be created: %s.', $directory));
+                throw new InvalidArgumentException(sprintf('Cache directory does not exist and cannot be created: "%s".', $directory));
             }
 
             if (!is_writable($directory)) {
-                throw new InvalidArgumentException(sprintf('Cache directory is not writable: %s.', $directory));
+                throw new InvalidArgumentException(sprintf('Cache directory is not writable: "%s".', $directory));
             }
         }
 
+        $preload = [];
         $dumpedValues = '';
         $dumpedMap = [];
         $dump = <<<'EOF'
@@ -334,9 +335,9 @@ EOF;
                 $value = "'N;'";
             } elseif (\is_object($value) || \is_array($value)) {
                 try {
-                    $value = VarExporter::export($value, $isStaticValue);
+                    $value = VarExporter::export($value, $isStaticValue, $preload);
                 } catch (\Exception $e) {
-                    throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable %s value.', $key, \is_object($value) ? \get_class($value) : 'array'), 0, $e);
+                    throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)), 0, $e);
                 }
             } elseif (\is_string($value)) {
                 // Wrap "N;" in a closure to not confuse it with an encoded `null`
@@ -345,7 +346,7 @@ EOF;
                 }
                 $value = var_export($value, true);
             } elseif (!is_scalar($value)) {
-                throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable %s value.', $key, \gettype($value)));
+                throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)));
             } else {
                 $value = var_export($value, true);
             }
@@ -376,6 +377,8 @@ EOF;
         unset(self::$valuesCache[$this->file]);
 
         $this->initialize();
+
+        return $preload;
     }
 
     /**
@@ -385,7 +388,7 @@ EOF;
     {
         if (isset(self::$valuesCache[$this->file])) {
             $values = self::$valuesCache[$this->file];
-        } elseif (!file_exists($this->file)) {
+        } elseif (!is_file($this->file)) {
             $this->keys = $this->values = [];
 
             return;
@@ -396,13 +399,13 @@ EOF;
         if (2 !== \count($values) || !isset($values[0], $values[1])) {
             $this->keys = $this->values = [];
         } else {
-            list($this->keys, $this->values) = $values;
+            [$this->keys, $this->values] = $values;
         }
     }
 
     private function generateItems(array $keys): \Generator
     {
-        $f = $this->createCacheItem;
+        $f = self::$createCacheItem;
         $fallbackKeys = [];
 
         foreach ($keys as $key) {

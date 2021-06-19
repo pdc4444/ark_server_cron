@@ -37,10 +37,16 @@ class IniFileLoader extends FileLoader
         }
 
         // real raw parsing
-        $result = parse_ini_file($path, true, INI_SCANNER_RAW);
+        $result = parse_ini_file($path, true, \INI_SCANNER_RAW);
 
         if (isset($result['parameters']) && \is_array($result['parameters'])) {
             foreach ($result['parameters'] as $key => $value) {
+                $this->container->setParameter($key, $this->phpize($value));
+            }
+        }
+
+        if ($this->env && \is_array($result['parameters@'.$this->env] ?? null)) {
+            foreach ($result['parameters@'.$this->env] as $key => $value) {
                 $this->container->setParameter($key, $this->phpize($value));
             }
         }
@@ -49,13 +55,13 @@ class IniFileLoader extends FileLoader
     /**
      * {@inheritdoc}
      */
-    public function supports($resource, string  $type = null)
+    public function supports($resource, string $type = null)
     {
         if (!\is_string($resource)) {
             return false;
         }
 
-        if (null === $type && 'ini' === pathinfo($resource, PATHINFO_EXTENSION)) {
+        if (null === $type && 'ini' === pathinfo($resource, \PATHINFO_EXTENSION)) {
             return true;
         }
 

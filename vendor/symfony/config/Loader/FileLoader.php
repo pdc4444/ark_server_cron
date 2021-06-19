@@ -31,9 +31,10 @@ abstract class FileLoader extends Loader
 
     private $currentDir;
 
-    public function __construct(FileLocatorInterface $locator)
+    public function __construct(FileLocatorInterface $locator, string $env = null)
     {
         $this->locator = $locator;
+        parent::__construct($env);
     }
 
     /**
@@ -71,26 +72,26 @@ abstract class FileLoader extends Loader
      */
     public function import($resource, string $type = null, bool $ignoreErrors = false, string $sourceResource = null, $exclude = null)
     {
-        if (\is_string($resource) && \strlen($resource) !== $i = strcspn($resource, '*?{[')) {
+        if (\is_string($resource) && \strlen($resource) !== ($i = strcspn($resource, '*?{[')) && false === strpos($resource, "\n")) {
             $excluded = [];
             foreach ((array) $exclude as $pattern) {
                 foreach ($this->glob($pattern, true, $_, false, true) as $path => $info) {
-                    // normalize Windows slashes
-                    $excluded[str_replace('\\', '/', $path)] = true;
+                    // normalize Windows slashes and remove trailing slashes
+                    $excluded[rtrim(str_replace('\\', '/', $path), '/')] = true;
                 }
             }
 
             $ret = [];
             $isSubpath = 0 !== $i && false !== strpos(substr($resource, 0, $i), '/');
             foreach ($this->glob($resource, false, $_, $ignoreErrors || !$isSubpath, false, $excluded) as $path => $info) {
-                if (null !== $res = $this->doImport($path, $type, $ignoreErrors, $sourceResource)) {
+                if (null !== $res = $this->doImport($path, 'glob' === $type ? null : $type, $ignoreErrors, $sourceResource)) {
                     $ret[] = $res;
                 }
                 $isSubpath = true;
             }
 
             if ($isSubpath) {
-                return isset($ret[1]) ? $ret : (isset($ret[0]) ? $ret[0] : null);
+                return isset($ret[1]) ? $ret : ($ret[0] ?? null);
             }
         }
 
@@ -170,7 +171,7 @@ abstract class FileLoader extends Loader
                     throw $e;
                 }
 
-                throw new LoaderLoadException($resource, $sourceResource, null, $e, $type);
+                throw new LoaderLoadException($resource, $sourceResource, 0, $e, $type);
             }
         }
 

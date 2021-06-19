@@ -127,7 +127,7 @@ abstract class AbstractRecursivePass implements CompilerPassInterface
         }
 
         if ($factory) {
-            list($class, $method) = $factory;
+            [$class, $method] = $factory;
             if ($class instanceof Reference) {
                 $class = $this->container->findDefinition((string) $class)->getClass();
             } elseif ($class instanceof Definition) {
@@ -150,14 +150,14 @@ abstract class AbstractRecursivePass implements CompilerPassInterface
                 throw new RuntimeException(sprintf('Invalid service "%s": class "%s" does not exist.', $this->currentId, $class));
             }
         } catch (\ReflectionException $e) {
-            throw new RuntimeException(sprintf('Invalid service "%s": %s.', $this->currentId, lcfirst(rtrim($e->getMessage(), '.'))));
+            throw new RuntimeException(sprintf('Invalid service "%s": ', $this->currentId).lcfirst($e->getMessage()));
         }
         if (!$r = $r->getConstructor()) {
             if ($required) {
                 throw new RuntimeException(sprintf('Invalid service "%s": class%s has no constructor.', $this->currentId, sprintf($class !== $this->currentId ? ' "%s"' : '', $class)));
             }
         } elseif (!$r->isPublic()) {
-            throw new RuntimeException(sprintf('Invalid service "%s": %s must be public.', $this->currentId, sprintf($class !== $this->currentId ? 'constructor of class "%s"' : 'its constructor', $class)));
+            throw new RuntimeException(sprintf('Invalid service "%s": ', $this->currentId).sprintf($class !== $this->currentId ? 'constructor of class "%s"' : 'its constructor', $class).' must be public.');
         }
 
         return $r;
@@ -198,7 +198,7 @@ abstract class AbstractRecursivePass implements CompilerPassInterface
     {
         if (null === $this->expressionLanguage) {
             if (!class_exists(ExpressionLanguage::class)) {
-                throw new LogicException('Unable to use expressions as the Symfony ExpressionLanguage component is not installed.');
+                throw new LogicException('Unable to use expressions as the Symfony ExpressionLanguage component is not installed. Try running "composer require symfony/expression-language".');
             }
 
             $providers = $this->container->getExpressionLanguageProviders();
@@ -209,7 +209,7 @@ abstract class AbstractRecursivePass implements CompilerPassInterface
                     $arg = $this->processValue(new Reference($id));
                     $this->inExpression = false;
                     if (!$arg instanceof Reference) {
-                        throw new RuntimeException(sprintf('"%s::processValue()" must return a Reference when processing an expression, %s returned for service("%s").', \get_class($this), \is_object($arg) ? \get_class($arg) : \gettype($arg), $id));
+                        throw new RuntimeException(sprintf('"%s::processValue()" must return a Reference when processing an expression, "%s" returned for service("%s").', static::class, get_debug_type($arg), $id));
                     }
                     $arg = sprintf('"%s"', $arg);
                 }

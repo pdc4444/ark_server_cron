@@ -15,6 +15,7 @@ use Composer\Composer;
 use Composer\EventDispatcher\ScriptExecutionException;
 use Composer\IO\IOInterface;
 use Composer\Semver\Constraint\EmptyConstraint;
+use Composer\Semver\Constraint\MatchAllConstraint;
 use Composer\Util\ProcessExecutor;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
@@ -93,7 +94,7 @@ class ScriptExecutor
     private function expandSymfonyCmd(string $cmd)
     {
         $repo = $this->composer->getRepositoryManager()->getLocalRepository();
-        if (!$repo->findPackage('symfony/console', new EmptyConstraint())) {
+        if (!$repo->findPackage('symfony/console', class_exists(MatchAllConstraint::class) ? new MatchAllConstraint() : new EmptyConstraint())) {
             $this->io->writeError(sprintf('<warning>Skipping "%s" (needs symfony/console to run).</>', $cmd));
 
             return null;
@@ -117,7 +118,7 @@ class ScriptExecutor
         $arguments = $phpFinder->findArguments();
 
         if ($env = (string) (getenv('COMPOSER_ORIGINAL_INIS'))) {
-            $paths = explode(PATH_SEPARATOR, $env);
+            $paths = explode(\PATH_SEPARATOR, $env);
             $ini = array_shift($paths);
         } else {
             $ini = php_ini_loaded_file();

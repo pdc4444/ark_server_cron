@@ -19,6 +19,8 @@ use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\Downloader\TransportException;
 use Composer\IO\IOInterface;
 use Composer\Json\JsonFile;
+use Composer\Util\HttpDownloader;
+use Composer\Util\Loop;
 
 /**
  * @author Fabien Potencier <fabien@symfony.com>
@@ -36,10 +38,9 @@ class Downloader
     private $degradedMode = false;
     private $endpoint;
     private $caFile;
-    private $flexId;
     private $enabled = true;
 
-    public function __construct(Composer $composer, IoInterface $io, ParallelDownloader $rfs)
+    public function __construct(Composer $composer, IoInterface $io, $rfs)
     {
         if (getenv('SYMFONY_CAFILE')) {
             $this->caFile = getenv('SYMFONY_CAFILE');
@@ -60,7 +61,7 @@ class Downloader
 
     public function setFlexId(string $id = null)
     {
-        $this->flexId = $id;
+        // No-op to support downgrading to v1.12.x
     }
 
     public function isEnabled()
@@ -85,6 +86,10 @@ class Downloader
      */
     public function getRecipes(array $operations): array
     {
+        if ($this->enabled && self::$DEFAULT_ENDPOINT !== $this->endpoint) {
+            $this->io->writeError('<warning>Using "'.$this->endpoint.'" as the Symfony endpoint</>');
+        }
+
         $paths = [];
         $chunk = '';
         foreach ($operations as $i => $operation) {
@@ -104,6 +109,15 @@ class Downloader
                 $branchAliases = $package->getExtra()['branch-alias'];
                 if (
                     (isset($branchAliases[$version]) && $alias = $branchAliases[$version]) ||
+                    (isset($branchAliases['dev-main']) && $alias = $branchAliases['dev-main']) ||
+                    (isset($branchAliases['dev-trunk']) && $alias = $branchAliases['dev-trunk']) ||
+                    (isset($branchAliases['dev-develop']) && $alias = $branchAliases['dev-develop']) ||
+                    (isset($branchAliases['dev-default']) && $alias = $branchAliases['dev-default']) ||
+                    (isset($branchAliases['dev-latest']) && $alias = $branchAliases['dev-latest']) ||
+                    (isset($branchAliases['dev-next']) && $alias = $branchAliases['dev-next']) ||
+                    (isset($branchAliases['dev-current']) && $alias = $branchAliases['dev-current']) ||
+                    (isset($branchAliases['dev-support']) && $alias = $branchAliases['dev-support']) ||
+                    (isset($branchAliases['dev-tip']) && $alias = $branchAliases['dev-tip']) ||
                     (isset($branchAliases['dev-master']) && $alias = $branchAliases['dev-master'])
                 ) {
                     $version = $alias;
@@ -129,16 +143,26 @@ class Downloader
             $paths[] = ['/p/'.$chunk];
         }
 
-        if ($this->enabled && self::$DEFAULT_ENDPOINT !== $this->endpoint) {
-            $this->io->writeError('<warning>Using "'.$this->endpoint.'" as the Symfony endpoint</>');
-        }
-
-        $bodies = [];
-        $this->rfs->download($paths, function ($path) use (&$bodies) {
-            if ($body = $this->get($path, [], false)->getBody()) {
-                $bodies[] = $body;
+        if ($this->rfs instanceof HttpDownloader) {
+            $loop = new Loop($this->rfs);
+            $bodies = [];
+            $jobs = [];
+            foreach ($paths as $path) {
+                $jobs[] = $this->rfs->add($this->endpoint.$path[0])->then(static function ($response) use (&$bodies) {
+                    $bodies[] = json_decode($response->getBody(), true);
+                }, function (\Exception $e) {
+                    $this->io->writeError('<warning>Failed to download recipe: '.$e->getMessage().'</>');
+                });
             }
-        });
+            $loop->wait($jobs);
+        } else {
+            $bodies = [];
+            $this->rfs->download($paths, function ($path) use (&$bodies) {
+                if ($body = $this->get($path, [], false)->getBody()) {
+                    $bodies[] = $body;
+                }
+            });
+        }
 
         $data = [];
         foreach ($bodies as $body) {
@@ -189,6 +213,12 @@ class Downloader
         $retries = 3;
         while ($retries--) {
             try {
+                if ($this->rfs instanceof HttpDownloader) {
+                    $response = $this->rfs->get($url, $options);
+
+                    return $this->parseJson($response->getBody(), $url, $cacheKey, $response->getHeaders());
+                }
+
                 $json = $this->rfs->getContents($this->endpoint, $url, false, $options);
 
                 return $this->parseJson($json, $url, $cacheKey, $this->rfs->getLastHeaders());
@@ -220,6 +250,15 @@ class Downloader
         $retries = 3;
         while ($retries--) {
             try {
+                if ($this->rfs instanceof HttpDownloader) {
+                    $response = $this->rfs->get($url, $options);
+                    if (304 === $response->getStatusCode()) {
+                        return new Response($response->getBody(), $response->getHeaders(), 304);
+                    }
+
+                    return $this->parseJson($response->getBody(), $url, $cacheKey, $response->getHeaders());
+                }
+
                 $json = $this->rfs->getContents($this->endpoint, $url, false, $options);
                 if (304 === $this->rfs->findStatusCode($this->rfs->getLastHeaders())) {
                     return new Response('', $this->rfs->getLastHeaders(), 304);
@@ -273,10 +312,6 @@ class Downloader
     private function getOptions(array $headers): array
     {
         $options = ['http' => ['header' => $headers]];
-
-        if ($this->flexId) {
-            $options['http']['header'][] = 'Project: '.$this->flexId;
-        }
 
         if (null !== $this->caFile) {
             $options['ssl']['cafile'] = $this->caFile;

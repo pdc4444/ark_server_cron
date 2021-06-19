@@ -46,8 +46,12 @@ class CopyFromRecipeConfigurator extends AbstractConfigurator
         );
 
         $removableFiles = $recipe->getFiles();
-        foreach ($lockedFiles as $file) {
-            if (isset($removableFiles[$file])) {
+
+        $lockedFiles = array_map('realpath', $lockedFiles);
+
+        // Compare file paths by their real path to abstract OS differences
+        foreach (array_keys($removableFiles) as $file) {
+            if (\in_array(realpath($file), $lockedFiles)) {
                 unset($removableFiles[$file]);
             }
         }
@@ -143,7 +147,7 @@ class CopyFromRecipeConfigurator extends AbstractConfigurator
         @unlink($to);
         $this->write(sprintf('  Removed <fg=green>"%s"</>', $this->path->relativize($to)));
 
-        if (0 === \count(glob(\dirname($to).'/*', GLOB_NOSORT))) {
+        if (0 === \count(glob(\dirname($to).'/*', \GLOB_NOSORT))) {
             @rmdir(\dirname($to));
         }
     }

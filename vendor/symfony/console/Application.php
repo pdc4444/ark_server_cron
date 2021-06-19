@@ -36,7 +36,6 @@ use Symfony\Component\Console\Input\InputAwareInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\StreamableInputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -577,7 +576,7 @@ class Application implements ResetInterface
 
         $exact = \in_array($namespace, $namespaces, true);
         if (\count($namespaces) > 1 && !$exact) {
-            throw new NamespaceNotFoundException(sprintf("The namespace \"%s\" is ambiguous.\nDid you mean one of these?\n%s", $namespace, $this->getAbbreviationSuggestions(array_values($namespaces))), array_values($namespaces));
+            throw new NamespaceNotFoundException(sprintf("The namespace \"%s\" is ambiguous.\nDid you mean one of these?\n%s.", $namespace, $this->getAbbreviationSuggestions(array_values($namespaces))), array_values($namespaces));
         }
 
         return $exact ? $namespace : reset($namespaces);
@@ -648,8 +647,13 @@ class Application implements ResetInterface
         // filter out aliases for commands which are already on the list
         if (\count($commands) > 1) {
             $commandList = $this->commandLoader ? array_merge(array_flip($this->commandLoader->getNames()), $this->commands) : $this->commands;
-            $commands = array_unique(array_filter($commands, function ($nameOrAlias) use ($commandList, $commands, &$aliases) {
-                $commandName = $commandList[$nameOrAlias] instanceof Command ? $commandList[$nameOrAlias]->getName() : $nameOrAlias;
+            $commands = array_unique(array_filter($commands, function ($nameOrAlias) use (&$commandList, $commands, &$aliases) {
+                if (!$commandList[$nameOrAlias] instanceof Command) {
+                    $commandList[$nameOrAlias] = $this->commandLoader->get($nameOrAlias);
+                }
+
+                $commandName = $commandList[$nameOrAlias]->getName();
+
                 $aliases[$nameOrAlias] = $commandName;
 
                 return $commandName === $nameOrAlias || !\in_array($commandName, $commands);
@@ -664,10 +668,6 @@ class Application implements ResetInterface
                 $maxLen = max(Helper::strlen($abbrev), $maxLen);
             }
             $abbrevs = array_map(function ($cmd) use ($commandList, $usableWidth, $maxLen, &$commands) {
-                if (!$commandList[$cmd] instanceof Command) {
-                    $commandList[$cmd] = $this->commandLoader->get($cmd);
-                }
-
                 if ($commandList[$cmd]->isHidden()) {
                     unset($commands[array_search($cmd, $commands)]);
 
@@ -682,7 +682,7 @@ class Application implements ResetInterface
             if (\count($commands) > 1) {
                 $suggestions = $this->getAbbreviationSuggestions(array_filter($abbrevs));
 
-                throw new CommandNotFoundException(sprintf("Command \"%s\" is ambiguous.\nDid you mean one of these?\n%s", $name, $suggestions), array_values($commands));
+                throw new CommandNotFoundException(sprintf("Command \"%s\" is ambiguous.\nDid you mean one of these?\n%s.", $name, $suggestions), array_values($commands));
             }
         }
 
@@ -774,17 +774,16 @@ class Application implements ResetInterface
         do {
             $message = trim($e->getMessage());
             if ('' === $message || OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-                $class = \get_class($e);
-                $class = 'c' === $class[0] && 0 === strpos($class, "class@anonymous\0") ? get_parent_class($class).'@anonymous' : $class;
+                $class = get_debug_type($e);
                 $title = sprintf('  [%s%s]  ', $class, 0 !== ($code = $e->getCode()) ? ' ('.$code.')' : '');
                 $len = Helper::strlen($title);
             } else {
                 $len = 0;
             }
 
-            if (false !== strpos($message, "class@anonymous\0")) {
-                $message = preg_replace_callback('/class@anonymous\x00.*?\.php(?:0x?|:)[0-9a-fA-F]++/', function ($m) {
-                    return class_exists($m[0], false) ? get_parent_class($m[0]).'@anonymous' : $m[0];
+            if (false !== strpos($message, "@anonymous\0")) {
+                $message = preg_replace_callback('/[a-zA-Z_\x7f-\xff][\\\\a-zA-Z0-9_\x7f-\xff]*+@anonymous\x00.*?\.php(?:0x?|:[0-9]++\$)[0-9a-fA-F]++/', function ($m) {
+                    return class_exists($m[0], false) ? (get_parent_class($m[0]) ?: key(class_implements($m[0])) ?: 'class').'@anonymous' : $m[0];
                 }, $message);
             }
 
@@ -857,18 +856,6 @@ class Application implements ResetInterface
 
         if (true === $input->hasParameterOption(['--no-interaction', '-n'], true)) {
             $input->setInteractive(false);
-        } else {
-            $inputStream = null;
-
-            if ($input instanceof StreamableInputInterface) {
-                $inputStream = $input->getStream();
-            }
-
-            $inputStream = !$inputStream && \defined('STDIN') ? STDIN : $inputStream;
-
-            if ((!$inputStream || !stream_isatty($inputStream)) && false === getenv('SHELL_INTERACTIVE')) {
-                $input->setInteractive(false);
-            }
         }
 
         switch ($shellVerbosity = (int) getenv('SHELL_VERBOSITY')) {

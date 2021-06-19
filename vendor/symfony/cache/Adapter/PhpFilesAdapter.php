@@ -58,7 +58,7 @@ class PhpFilesAdapter extends AbstractAdapter implements PruneableInterface
     {
         self::$startTime = self::$startTime ?? $_SERVER['REQUEST_TIME'] ?? time();
 
-        return \function_exists('opcache_invalidate') && filter_var(ini_get('opcache.enable'), FILTER_VALIDATE_BOOLEAN) && (!\in_array(\PHP_SAPI, ['cli', 'phpdbg'], true) || filter_var(ini_get('opcache.enable_cli'), FILTER_VALIDATE_BOOLEAN));
+        return \function_exists('opcache_invalidate') && filter_var(ini_get('opcache.enable'), \FILTER_VALIDATE_BOOLEAN) && (!\in_array(\PHP_SAPI, ['cli', 'phpdbg'], true) || filter_var(ini_get('opcache.enable_cli'), \FILTER_VALIDATE_BOOLEAN));
     }
 
     /**
@@ -226,7 +226,7 @@ class PhpFilesAdapter extends AbstractAdapter implements PruneableInterface
                 try {
                     $value = VarExporter::export($value, $isStaticValue);
                 } catch (\Exception $e) {
-                    throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable %s value.', $key, \is_object($value) ? \get_class($value) : 'array'), 0, $e);
+                    throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)), 0, $e);
                 }
             } elseif (\is_string($value)) {
                 // Wrap "N;" in a closure to not confuse it with an encoded `null`
@@ -235,7 +235,7 @@ class PhpFilesAdapter extends AbstractAdapter implements PruneableInterface
                 }
                 $value = var_export($value, true);
             } elseif (!is_scalar($value)) {
-                throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable %s value.', $key, \gettype($value)));
+                throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)));
             } else {
                 $value = var_export($value, true);
             }
@@ -264,7 +264,7 @@ class PhpFilesAdapter extends AbstractAdapter implements PruneableInterface
         }
 
         if (!$ok && !is_writable($this->directory)) {
-            throw new CacheException(sprintf('Cache directory is not writable (%s)', $this->directory));
+            throw new CacheException(sprintf('Cache directory is not writable (%s).', $this->directory));
         }
 
         return $ok;
@@ -305,7 +305,7 @@ class PhpFilesAdapter extends AbstractAdapter implements PruneableInterface
 
     private function getFileKey(string $file): string
     {
-        if (!$h = @fopen($file, 'rb')) {
+        if (!$h = @fopen($file, 'r')) {
             return '';
         }
 

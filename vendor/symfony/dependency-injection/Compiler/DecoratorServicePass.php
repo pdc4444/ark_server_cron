@@ -24,12 +24,23 @@ use Symfony\Component\DependencyInjection\Reference;
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Diego Saint Esteben <diego@saintesteben.me>
  */
-class DecoratorServicePass implements CompilerPassInterface
+class DecoratorServicePass extends AbstractRecursivePass
 {
+    private $innerId = '.inner';
+
+    public function __construct(?string $innerId = '.inner')
+    {
+        if (0 < \func_num_args()) {
+            trigger_deprecation('symfony/dependency-injection', '5.3', 'Configuring "%s" is deprecated.', __CLASS__);
+        }
+
+        $this->innerId = $innerId;
+    }
+
     public function process(ContainerBuilder $container)
     {
         $definitions = new \SplPriorityQueue();
-        $order = PHP_INT_MAX;
+        $order = \PHP_INT_MAX;
 
         foreach ($container->getDefinitions() as $id => $definition) {
             if (!$decorated = $definition->getDecoratedService()) {
@@ -39,9 +50,9 @@ class DecoratorServicePass implements CompilerPassInterface
         }
         $decoratingDefinitions = [];
 
-        foreach ($definitions as list($id, $definition)) {
+        foreach ($definitions as [$id, $definition]) {
             $decoratedService = $definition->getDecoratedService();
-            list($inner, $renamedId) = $decoratedService;
+            [$inner, $renamedId] = $decoratedService;
             $invalidBehavior = $decoratedService[3] ?? ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE;
 
             $definition->setDecoratedService(null);
@@ -49,6 +60,10 @@ class DecoratorServicePass implements CompilerPassInterface
             if (!$renamedId) {
                 $renamedId = $id.'.inner';
             }
+
+            $this->currentId = $renamedId;
+            $this->processValue($definition);
+
             $definition->innerServiceId = $renamedId;
             $definition->decorationOnInvalid = $invalidBehavior;
 
@@ -78,12 +93,33 @@ class DecoratorServicePass implements CompilerPassInterface
 
             if (isset($decoratingDefinitions[$inner])) {
                 $decoratingDefinition = $decoratingDefinitions[$inner];
-                $definition->setTags(array_merge($decoratingDefinition->getTags(), $definition->getTags()));
-                $decoratingDefinition->setTags([]);
+
+                $decoratingTags = $decoratingDefinition->getTags();
+                $resetTags = [];
+
+                // container.service_locator and container.service_subscriber have special logic and they must not be transferred out to decorators
+                foreach (['container.service_locator', 'container.service_subscriber'] as $containerTag) {
+                    if (isset($decoratingTags[$containerTag])) {
+                        $resetTags[$containerTag] = $decoratingTags[$containerTag];
+                        unset($decoratingTags[$containerTag]);
+                    }
+                }
+
+                $definition->setTags(array_merge($decoratingTags, $definition->getTags()));
+                $decoratingDefinition->setTags($resetTags);
                 $decoratingDefinitions[$inner] = $definition;
             }
 
-            $container->setAlias($inner, $id)->setPublic($public)->setPrivate($private);
+            $container->setAlias($inner, $id)->setPublic($public);
         }
+    }
+
+    protected function processValue($value, bool $isRoot = false)
+    {
+        if ($value instanceof Reference && $this->innerId === (string) $value) {
+            return new Reference($this->currentId, $value->getInvalidBehavior());
+        }
+
+        return parent::processValue($value, $isRoot);
     }
 }
