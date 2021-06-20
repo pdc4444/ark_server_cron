@@ -8,6 +8,7 @@ ErrorHandler::register();
 
 class InstallService extends ShardService
 {
+    CONST STEAM_CMD_DEFAULT = '/usr/games/steamcmd';
     CONST CHECK_STEAM_CMD = 'which steamcmd';
     CONST CONFIG_FILE_VARS = [
         'A' => 'ark_server_files', 
@@ -35,7 +36,12 @@ class InstallService extends ShardService
 
     private function checkSteamCmd()
     {   
-        $result = ErrorHandler::call('exec', SELF::CHECK_STEAM_CMD);
+        //Check the default install location first
+        if (file_exists(SELF::STEAM_CMD_DEFAULT) !== FALSE) {
+            $result = SELF::STEAM_CMD_DEFAULT;
+        }
+        //Look for steamcmd using which command (must be in $PATH ENV variables)
+        isset($result) ? TRUE : $result = ErrorHandler::call('exec', SELF::CHECK_STEAM_CMD);
         if (empty($result)) {
             throw new \RuntimeException('steamcmd was not found. Make sure it is installed and referenced in your bash $HOME.');
         } else {

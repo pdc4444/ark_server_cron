@@ -12,6 +12,7 @@ RUN echo steam steam/question select "I AGREE" | debconf-set-selections
 RUN apt-get install lib32gcc1 steamcmd curl -y
 RUN apt-get install php7.3 -y
 RUN apt-get install php7.3-xml -y
+RUN apt-get install php7.3-readline -y
 RUN apt install php7.3-dev -y
 RUN apt-get install libzip-dev -y
 RUN apt-get install git -y
@@ -23,5 +24,8 @@ RUN echo 'extension=zip.so' >> /etc/php/7.3/cli/php.ini
 RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
 RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 RUN git clone https://github.com/pdc4444/ark_server_cron.git
-RUN cd ark_server_cron && git checkout refactor
+COPY ./ /ark_server_cron/
+# RUN cd /ark_server_cron && composer install
+# ENTRYPOINT [ "/ark_server_cron/bin/console"]
+# CMD ["shell"]
 CMD ["bash"]
