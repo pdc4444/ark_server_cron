@@ -1,6 +1,8 @@
 <?php
 // src/Service/HelperService.php
 namespace App\Service;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 class HelperService
 {
@@ -51,5 +53,24 @@ class HelperService
             }
         }
         return $important_shard_data;
+    }
+
+    /**
+     * 
+     */
+    public function shell_cmd($cmd_array) 
+    {
+        $process = new Process($cmd_array);
+        $process->setTimeout(7200);    //2 hour total timeout
+        $process->setIdleTimeout(120); //2 minute idle timeout
+        $process->start();
+
+        foreach ($process as $type => $data) {
+            if ($process::OUT === $type) {
+                echo $data;
+            } else { // $process::ERR === $type
+                echo $data;
+            }
+        }
     }
 }

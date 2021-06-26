@@ -10,47 +10,25 @@ then
   exit
 fi
 
-#Check if PHP is installed if not, install it
-php_check=$(which php)
-
-if [ "$php_check" != "/usr/bin/php" ]
-then
-	echo 'Installing PHP'
-	apt-get update
-	apt-get install php -y
-fi
-
-#Check if Steam user exists if not, create it and switch to that user
-steam_check=$(ls /home | grep steam)
-if [ "$steam_check" != "steam" ]
-then
-	echo 'steam user does not exist, creating the user with the default password steam'.
-	sudo su -c "useradd steam -s /bin/bash -m" && echo steam:steam | sudo chpasswd
-fi
-
-#Check if zip is installed if not, install it
-zip_check=$(which zip)
-if [ "$zip_check" != "/usr/bin/zip" ]
-then
-	echo 'Installing Zip'
-	apt-get update
-	apt install zip -y
-fi
-
-#Check if steamcmd is installed if not, install it
-steamcmd_check=$(sudo su steam -c 'which steamcmd')
-if [ "$steamcmd_check" != "/usr/games/steamcmd" ]
-then
-	echo 'Installing Steamcmd'
-	add-apt-repository multiverse 
-	dpkg --add-architecture i386
-	apt-get update
-	apt-get install lib32gcc1 steamcmd -y
-fi
-
-#Copy the cron and it's dependencies to the steam user home directory
-sudo -H -u steam bash -c 'cp ark_server_cron.php /home/steam/ark_server_cron.php'
-sudo -H -u steam bash -c 'cp ark_configuration_file_settings.php /home/steam/ark_configuration_file_settings.php'
-
-#Run the cron as the steam user
-sudo su steam -c '/usr/bin/php /home/steam/ark_server_cron.php'
+TZ=US
+sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+sudo apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:ondrej/php
+sudo dpkg --add-architecture i386
+sudo add-apt-repository multiverse
+sudo apt-get update
+sudo echo "steam steam/license note '' | debconf-set-selections"
+sudo echo 'steam steam/question select "I AGREE" | debconf-set-selections'
+sudo apt-get install lib32gcc-s1 steamcmd curl unzip -y
+sudo apt-get install php7.3 -y
+sudo apt-get install php7.3-xml -y
+sudo apt-get install php7.3-readline -y
+sudo apt install php7.3-dev -y
+sudo apt-get install libzip-dev -y
+sudo apt-get install git -y
+sudo apt-get install unzip -y
+sudo apt install php-pear -y
+sudo pecl channel-update pecl.php.net
+sudo pecl install zip
+sudo echo 'extension=zip.so' >> /etc/php/7.3/cli/php.ini
+sudo curl -sS https://getcomposer.org/installer -o composer-setup.php
+sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
