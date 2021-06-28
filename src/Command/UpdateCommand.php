@@ -14,7 +14,6 @@ class UpdateCommand extends Command
 {
     protected static $defaultName = 'update';
     CONST SERVICE_TITLE = "Ark Server Cron";
-    CONST FEEDBACK = "Beginning update!";
     CONST SUCCESS = "Ark Server update complete!";
     CONST FAILURE = "Ark Server could not be updated! Try manually running this command to observe the error:\n";
     CONST STOP_SERVICE_CHOICE = 'All';
@@ -36,22 +35,21 @@ class UpdateCommand extends Command
     {
         $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new UpdateService();
+        $service->user_console_controller = $console_controller;
         $console_controller->drawCliHeader();
         $stop_service = new StopService();
         if (!empty($stop_service->running_shards)) {
             //Stop The Server
             $stop_service->stopSelectedServer(SELF::STOP_SERVICE_CHOICE);
         }
+        $service->run();
 
-        $output->writeln(SELF::FEEDBACK);
-        $update_result = $service->run();
-
-        if ($update_result == TRUE) {
+        if ($service->update_status === TRUE) {
             $output->writeln(SELF::SUCCESS);
         } else {
             $output->writeln(SELF::FAILURE . $service->generated_update_command);
         }
-        
+        $output->writeln(SELF::FAILURE . $service->generated_update_command);
         return 0;
     }
 }

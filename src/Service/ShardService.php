@@ -2,6 +2,8 @@
 // src/Service/ShardService.php
 namespace App\Service;
 use Symfony\Component\ErrorHandler\Errorhandler;
+use Symfony\Component\Console\Output\OutputInterface;
+use App\Controller\UserConsoleController;
 use App\Service\HelperService;
 ErrorHandler::register();
 
@@ -33,14 +35,14 @@ class ShardService
                                     'NPCReplacements',
                                     ];
 
-	public $config_file;                 //The path to the configuration file responsible for determining where the root server files, backup path, and shard directory are located.
-	public $backup_path;                 //The path to where backups are stored
-	public $root_server_files;           //The path to where the root server files are stored
-    public $server_shard_directory;      //The path to where the server shard directories are stored
-    public $steam_cmd;                   //The path to where the steamcmd binary is stored
-    public $cluster_directory = FALSE;   //The path to where the cluster data is stored
-    public $shards;                      //The path to where each individual shard is stored
-    public $root_dir;                    //The directory where the ark server cron files live
+	public $config_file;                         //The path to the configuration file responsible for determining where the root server files, backup path, and shard directory are located.
+	public $backup_path;                         //The path to where backups are stored
+	public $root_server_files;                   //The path to where the root server files are stored
+    public $server_shard_directory;              //The path to where the server shard directories are stored
+    public $steam_cmd;                           //The path to where the steamcmd binary is stored
+    public $cluster_directory = FALSE;           //The path to where the cluster data is stored
+    public $shards;                              //The path to where each individual shard is stored
+    public $root_dir;                            //The directory where the ark server cron files live
 	
     /**
      * Start the service by checking to see if the configuration file is present.
@@ -57,7 +59,7 @@ class ShardService
 		} else if (strpos(get_class($this),'InstallService') === FALSE) {
             throw new \RuntimeException('ark_server_cron.cfg not found! Have you run the installer yet?');
         }
-	}
+    }
     
     /**
      * Attempt to load the data from the ark_server_cron.cfg file and

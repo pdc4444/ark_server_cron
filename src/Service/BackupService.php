@@ -42,7 +42,7 @@ class BackupService extends ShardService
 
     private function shardBackup($shard_data)
     {
-        $destination = $this->backup_path . DIRECTORY_SEPARATOR . $shard_data['SessionName'] . '_' . $this->now . '.zip';
+        $destination = $this->backup_path . DIRECTORY_SEPARATOR . $shard_data['SessionName'] . '?*|_|*?' . $this->now . '.zip';
         $this->bar_section = $this->output->section();
         $this->text_section = $this->output->section();
         $this->progress_bar = new ProgressBar($this->bar_section);

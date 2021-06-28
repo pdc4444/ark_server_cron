@@ -9,13 +9,13 @@ class UpdateService extends ShardService
 {
 
     //This will make it update in the background, I'll need to make a sub process that watches this update
-    // CONST STEAM_CMD_BASE_STRING = 'STEAM_CMD_BINARY +login anonymous +force_install_dir ROOT_SERVER_FILE_DIR +app_update 376030 validate +exit > /dev/null 2>&1 & ';
-    CONST STEAM_CMD_BASE_STRING = 'STEAM_CMD_BINARY +login anonymous +force_install_dir ROOT_SERVER_FILE_DIR +app_update 376030 validate +exit';
     CONST STEAM_CMD_ARRAY = ['STEAM_CMD_BINARY', '+login anonymous', '+force_install_dir ROOT_SERVER_FILE_DIR', '+app_update 376030', 'validate +exit'];
     CONST SUCCESS_MSG = "Success! App '376030' fully installed.";
+    CONST UPDATER_RUNNING = "Ark Server files are being updated. Please stand by.";
 
     public $update_status;
-    // public $generated_update_command;
+    public $user_console_controller;
+    public $generated_update_command;
 
     public function __construct()
     {
@@ -25,13 +25,11 @@ class UpdateService extends ShardService
     public function run()
     {
         $log = $this->updateRootServerFiles();
-        // $this->update_status = $this->verifySuccessMessage($log);
+        $this->update_status = $this->verifySuccessMessage($log);
     }
 
     private function updateRootServerFiles()
     {
-        // $cmd = str_replace('STEAM_CMD_BINARY', $this->steam_cmd, SELF::STEAM_CMD_BASE_STRING);
-        // $cmd = str_replace('ROOT_SERVER_FILE_DIR', $this->root_server_files, $cmd);
         $base_cmd_array = SELF::STEAM_CMD_ARRAY;
         foreach ($base_cmd_array as $key => $value) {
             if (strpos($value, 'STEAM_CMD_BINARY') !== FALSE) {
@@ -40,19 +38,15 @@ class UpdateService extends ShardService
                 $base_cmd_array[$key] = str_replace('ROOT_SERVER_FILE_DIR', $this->root_server_files, $base_cmd_array[$key]);
             }
         }
-        // $this->generated_update_command = $cmd;
-        // return Errorhandler::call('shell_exec', $cmd);
-        // print_r($base_cmd_array);
-        // echo $this->root_server_files . "\n";
-        // exit();
-        HelperService::shell_cmd($base_cmd_array);
+        $this->generated_update_command = implode(' ', $base_cmd_array);
+        return HelperService::shell_cmd($base_cmd_array, $this->user_console_controller, SELF::UPDATER_RUNNING);
     }
 
     private function verifySuccessMessage($log)
     {
         $log_array = explode("\n", $log);
         foreach ($log_array as $line) {
-            if (strpos(strtolower(SELF::SUCCESS_MSG), strtolower($line)) !== FALSE) {
+            if (!empty($line) && strpos(strtolower(SELF::SUCCESS_MSG), strtolower($line)) !== FALSE) {
                 return TRUE;
             }
         }

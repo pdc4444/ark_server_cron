@@ -22,7 +22,8 @@ class ShellCommand extends Command
         'Restart a Shard',
         'Print Shard Status',
         'Perform Manual Backup',
-        'Perform Manual Update'
+        'Perform Manual Update',
+        'Restore a Backup'
         ]];
     CONST ANSWER_KEY = [
         'Install Root Server Files' => 'InstallCommand',
@@ -32,7 +33,8 @@ class ShellCommand extends Command
         'Restart a Shard' => 'RestartCommand',
         'Print Shard Status' => 'StatusCommand',
         'Perform Manual Backup' => 'BackupCommand',
-        'Perform Manual Update' => 'UpdateCommand'
+        'Perform Manual Update' => 'UpdateCommand',
+        'Restore a Backup' => 'RestoreCommand'
     ];
 
     public function __construct()

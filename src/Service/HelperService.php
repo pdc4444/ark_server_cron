@@ -36,7 +36,7 @@ class HelperService
     {
         $important_shard_data = [];
         foreach ($raw_shard_data as $shard_name => $shard_data) {
-            if($shard_name != 'installed'){
+            if ($shard_name != 'installed') {
                 $important_shard_data[$shard_name]['Shard Number'] = $shard_name;
                 $important_shard_data[$shard_name]['Query Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['QueryPort'];
                 $important_shard_data[$shard_name]['Game Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['GamePort'];
@@ -56,21 +56,88 @@ class HelperService
     }
 
     /**
+     * This function uses the Symfony Process component. You can pass an array that will initiate a shell command.
+     * Additionally, this function draws the cli header and keeps an elapsed timer during the duration of the process being run.
+     * We return the captured output, be it stdout or stderr.
      * 
+     * @param array $cmd_array - ["echo", "this is a command"]
+     * @param object $console_controller - An instance of the UserConsoleController object.
+     * @param string $msg - A message that can be passed to customize the feedback given during process run.
+     * @return string $output - A large string that contains any output captured from the running process.
      */
-    public function shell_cmd($cmd_array) 
+    public function shell_cmd($cmd_array, $console_controller, $msg = '')
     {
         $process = new Process($cmd_array);
         $process->setTimeout(7200);    //2 hour total timeout
         $process->setIdleTimeout(120); //2 minute idle timeout
+        $start_time = new \DateTime();
         $process->start();
+        $output = '';
 
-        foreach ($process as $type => $data) {
-            if ($process::OUT === $type) {
-                echo $data;
-            } else { // $process::ERR === $type
-                echo $data;
+        $console_controller->drawCliHeader();
+        $first_print = TRUE;
+        while ($process->isRunning()) {
+            // waiting for process to finish
+            if ($msg !== '') {
+                $elapsed = HelperService::elapsedTime($start_time);
+                $console_feedback = $msg . "\nTime Elapsed: " . $elapsed . "\n";
+                if ($first_print === FALSE) {
+                    echo "\e[2A" . $console_feedback;
+                } else {
+                    echo $console_feedback;
+                }
+                $output .= $process->getIncrementalOutput();
+                $first_print = FALSE;
             }
         }
+        return $output;
     }
+
+    /**
+     * This function takes a start time and returns the difference in H:I:S format
+     * 
+     * @param object $start_time - An instance of the DateTime object that represents the start time
+     * @return string - The elapsed time in string format.
+     */
+    public function elapsedTime($start_time)
+    {
+        $now = new \DateTime();
+        $elapsed = $now->diff($start_time);
+        return $elapsed->format("%H:%I:%S");
+    }
+
+    public function delTree($dir)
+    {
+        $files = array_diff(scandir($dir), array('.','..'));
+        foreach ($files as $file) {
+            (is_dir("$dir/$file") && !is_link($dir)) ? HelperService::delTree("$dir/$file") : unlink("$dir/$file");
+        }
+        return rmdir($dir);
+    }
+
+    public function recursiveChmod($path, $filemode, $dirmode) {
+        if (is_dir($path)) {
+            if (!chmod($path, $dirmode)) {
+                $dirmode_str = decoct($dirmode);
+                throw new \RuntimeException("Failed applying filemode '$dirmode_str' on directory '$path'\n  `-> the directory '$path' will be skipped from recursive chmod\n");
+            }
+            $dh = opendir($path);
+            while (($file = readdir($dh)) !== false) {
+                if($file != '.' && $file != '..') {  // skip self and parent pointing directories
+                    $fullpath = $path . '/' . $file;
+                    HelperService::recursiveChmod($fullpath, $filemode,$dirmode);
+                }
+            }
+            closedir($dh);
+        } else {
+            if (is_link($path)) {
+                print "link '$path' is skipped\n";
+                return;
+            }
+            if (!chmod($path, $filemode)) {
+                $filemode_str = decoct($filemode);
+                throw new \RuntimeException("Failed applying filemode '$filemode_str' on file '$path'\n");
+            }
+        }
+    } 
 }
