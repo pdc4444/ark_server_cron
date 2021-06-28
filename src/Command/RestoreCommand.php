@@ -16,9 +16,9 @@ class RestoreCommand extends Command
     CONST FEEDBACK = "Restoring selected backup!";
     CONST QUERY = "Which shard would you like to restore?";
     CONST QUERY_2 = "Please select a back you'd like to restore.";
-    // CONST COMMENT_QUERY = "Please enter a comment for this backup:";
     CONST CONTEXT = "Note: The shard will be need to be stopped for a backup restoration.";
-    // CONST SUCCESS = "Ark Server backup complete!";
+    CONST STOP_TEXT = "Attemping to stop server so that we can restore a backup.";
+    CONST SUCCESS = "Backup has been successfully restored!";
     // CONST FAILURE = "Ark Server could not be backed up!";
     CONST STOP_SERVICE_CHOICE = 'All';
     CONST DESCRIPTION = 'Restore the ark server of your choice.';
@@ -58,15 +58,16 @@ class RestoreCommand extends Command
 
         $stop_service = new StopService();
         if (!empty($stop_service->running_shards)) {
+            $console_controller->drawCliHeader();
+            $output->writeln(SELF::STOP_TEXT . $console_controller::LINE_BREAK);
             //Stop The Server
-            $stop_service->stopSelectedServer($chosen_shard['Shard']);
+            $stop_service->stopSelectedServer($chosen_shard);
         }
 
         $console_controller->drawCliHeader();
         $output->writeln(SELF::FEEDBACK . $console_controller::LINE_BREAK);
         $service->run($chosen_backup);
-        // $output->writeln(SELF::FEEDBACK . $console_controller::LINE_BREAK);
-        // $service->run($chosen_shard['Shard'], $comment, $output);
+        $output->writeln(SELF::SUCCESS . $console_controller::LINE_BREAK);
         
         return 0;
     }
