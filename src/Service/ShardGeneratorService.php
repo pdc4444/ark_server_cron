@@ -21,9 +21,11 @@ class ShardGeneratorService extends ShardService
 	private $temp_directory_location;         //The location of the temporary directory where we are building all the shard files. Also set by createNewShardDirectory()
 	private $config_file_location_array = []; //An array to the paths of each configuration file required to run an ark server shard. Set by generateConfigFiles()
     
-	public function __construct()
+	public function __construct($construct_parent = TRUE)
 	{
-        parent::__construct();
+		if ($construct_parent) {
+			parent::__construct();
+		}
     }
 
 	/**
@@ -35,6 +37,12 @@ class ShardGeneratorService extends ShardService
 		$this->createNewShardDirectory();
 		$this->recursivelyCreateSymLinks($this->root_server_files, $this->temp_directory_location);
 		$this->createRemainingDirectories();
+	}
+
+	public function rebuild($root_server_files, $shard_location)
+	{
+		$this->createNewDirectory($shard_location);
+		$this->recursivelyCreateSymLinks($root_server_files, $shard_location);
 	}
 	
 	/**

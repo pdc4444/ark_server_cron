@@ -14,8 +14,9 @@ class UpdateCommand extends Command
 {
     protected static $defaultName = 'update';
     CONST SERVICE_TITLE = "Ark Server Cron";
-    CONST SUCCESS = "Ark Server update complete!";
-    CONST FAILURE = "Ark Server could not be updated! Try manually running this command to observe the error:\n";
+    CONST HALFWAY_DONE = "Ark Root Server files updated, now updating each shard!";
+    CONST FAILURE = "Ark Root Server files could not be updated. Please try manually running this command for further troubleshooting: ";
+    CONST SUCCESS = "All shards have been updated! Ark server update complete!";
     CONST STOP_SERVICE_CHOICE = 'All';
     CONST DESCRIPTION = 'Updates the ark server of your choice.';
 
@@ -45,11 +46,12 @@ class UpdateCommand extends Command
         $service->run();
 
         if ($service->update_status === TRUE) {
+            $output->writeln(SELF::HALFWAY_DONE);
+            $service->updateEachShard();
             $output->writeln(SELF::SUCCESS);
         } else {
             $output->writeln(SELF::FAILURE . $service->generated_update_command);
         }
-        $output->writeln(SELF::FAILURE . $service->generated_update_command);
         return 0;
     }
 }

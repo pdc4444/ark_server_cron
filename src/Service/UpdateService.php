@@ -3,7 +3,11 @@
 namespace App\Service;
 use App\Service\ShardService;
 use App\Service\HelperService;
+use App\Service\ShardGeneratorService;
 use Symfony\Component\ErrorHandler\Errorhandler;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\Filesystem\Filesystem;
+ErrorHandler::register();
 
 class UpdateService extends ShardService
 {
@@ -53,5 +57,37 @@ class UpdateService extends ShardService
         return FALSE;
     }
 
+    public function updateEachShard()
+    {
+        $filesystem = new Filesystem();
+        $shard_generator = new ShardGeneratorService(FALSE);
+        $shards = array_column($this->shards, 'Path');
+        foreach ($shards as $shard) {
+            $shard_path = '/' . trim($shard, '/');
+            $shard_path_parts = explode('/', $shard_path);
+            $shard_name = current(array_reverse($shard_path_parts));
+            $saved_data = $shard_path . DIRECTORY_SEPARATOR . 'ShooterGame' . DIRECTORY_SEPARATOR . 'Saved';
+            $tmp_location = DIRECTORY_SEPARATOR . 'tmp' . DIRECTORY_SEPARATOR . $shard_name;
 
+            //Remove any duplicate directories if they exist
+            if (file_exists($tmp_location)) {
+                $filesystem->remove($tmp_location);
+            }
+
+            //Move Saved data to a safe location
+            $filesystem->rename($saved_data, $tmp_location);
+
+            //Remove the old shard folder
+            $filesystem->remove($shard_path);
+
+            //Rebuild the symlinks for the shard folder
+            $shard_generator->rebuild($this->root_server_files, $shard_path);
+
+            //Moved Saved data back to the proper location
+            $filesystem->rename($tmp_location, $saved_data);
+
+            //Fix the folder permissions
+            $filesystem->chmod($saved_data, 0755, 0000, true);
+        }
+    }
 }
