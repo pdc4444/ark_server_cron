@@ -125,13 +125,12 @@ class HelperService
             while (($file = readdir($dh)) !== false) {
                 if($file != '.' && $file != '..') {  // skip self and parent pointing directories
                     $fullpath = $path . '/' . $file;
-                    HelperService::recursiveChmod($fullpath, $filemode,$dirmode);
+                    HelperService::recursiveChmod($fullpath, $filemode, $dirmode);
                 }
             }
             closedir($dh);
         } else {
             if (is_link($path)) {
-                print "link '$path' is skipped\n";
                 return;
             }
             if (!chmod($path, $filemode)) {
@@ -139,5 +138,5 @@ class HelperService
                 throw new \RuntimeException("Failed applying filemode '$filemode_str' on file '$path'\n");
             }
         }
-    } 
+    }
 }

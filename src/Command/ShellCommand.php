@@ -6,7 +6,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use App\Service\ShellService;
-// use App\Service\HelperService;
 use App\Controller\UserConsoleController;
 
 class ShellCommand extends Command
@@ -23,7 +22,8 @@ class ShellCommand extends Command
         'Print Shard Status',
         'Perform Manual Backup',
         'Perform Manual Update',
-        'Restore a Backup'
+        'Restore a Backup',
+        'Manual Mod Only Update'
         ]];
     CONST ANSWER_KEY = [
         'Install Root Server Files' => 'InstallCommand',
@@ -34,7 +34,8 @@ class ShellCommand extends Command
         'Print Shard Status' => 'StatusCommand',
         'Perform Manual Backup' => 'BackupCommand',
         'Perform Manual Update' => 'UpdateCommand',
-        'Restore a Backup' => 'RestoreCommand'
+        'Restore a Backup' => 'RestoreCommand',
+        'Manual Mod Only Update' => 'ModUpdateCommand'
     ];
 
     public function __construct()
