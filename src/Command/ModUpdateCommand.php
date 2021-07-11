@@ -15,9 +15,6 @@ class ModUpdateCommand extends Command
 {
     protected static $defaultName = 'modupdate';
     CONST SERVICE_TITLE = "Ark Server Cron";
-    // CONST HALFWAY_DONE = "Ark Root Server files updated, now updating each shard!";
-    // CONST FAILURE = "Ark Root Server files could not be updated. Please try manually running this command for further troubleshooting: ";
-    // CONST SUCCESS = "All shards have been updated! Ark server update complete!";
     CONST STOP_SERVICE_CHOICE = 'All';
     CONST DESCRIPTION = 'Updates the ark server of your choice.';
 

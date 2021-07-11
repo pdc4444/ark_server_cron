@@ -9,6 +9,7 @@ use App\Service\StopService;
 use App\Service\UpdateService;
 use App\Service\HelperService;
 use App\Controller\UserConsoleController;
+use App\Service\ModService;
 
 class UpdateCommand extends Command
 {
@@ -44,6 +45,11 @@ class UpdateCommand extends Command
             $stop_service->stopSelectedServer(SELF::STOP_SERVICE_CHOICE);
         }
         $service->run();
+
+        $mod_service = new ModService();
+        $mod_service ->user_console_controller = $service->user_console_controller;
+        $mod_service->run();
+        HelperService::recursiveChmod($service->root_server_files, 0755, 0755);
 
         if ($service->update_status === TRUE) {
             $output->writeln(SELF::HALFWAY_DONE);

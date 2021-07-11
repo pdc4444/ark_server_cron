@@ -51,6 +51,7 @@ class ShardService
      */
 	public function __construct()
 	{
+        chdir(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
         $this->root_dir = str_replace('src/Service', '', __DIR__);
         $this->config_file = $this->root_dir . HelperService::CRON_CONFIG;
 		if (file_exists($this->config_file)) {

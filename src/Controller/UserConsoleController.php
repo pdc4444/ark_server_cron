@@ -52,8 +52,8 @@ class UserConsoleController
     /**
      * Initializes the object, and draws the header to the cli.
      * 
-     * @param string $header - The text to display when construct fires off.
-     * @param object $output - An instance of Symfony's OutputInterface object
+     * @param String $header - The text to display when construct fires off.
+     * @param Object $output - An instance of Symfony's OutputInterface object
      */
     public function __construct(string $header = '', object $output = NULL)
     {
@@ -75,7 +75,7 @@ class UserConsoleController
      * If $this->options_list is not false, we ask the question through use of
      * Symfony's tables.
      * 
-     * @return mixed $this->selected_answer - The user's answer to the question.
+     * @return Mixed $this->selected_answer - The user's answer to the question.
      */
     public function askQuestion()
     {
@@ -113,7 +113,7 @@ class UserConsoleController
      * This function prompts the user for their answer. Once answered, 
      * we move the terminal up two lines and return the response
      * 
-     * @return string $user_response - The user's answer to the question
+     * @return String $user_response - The user's answer to the question
      */
     private function userInput()
     {
@@ -165,7 +165,7 @@ class UserConsoleController
     /**
      * This function handles the answer given by the user if the question was a list of options.
      * 
-     * @param string $answer - The user's response from the readLine prompt.
+     * @param String $answer - The user's response from the readLine prompt.
      */
     private function processListAnswer($answer)
     {
@@ -224,7 +224,7 @@ class UserConsoleController
     /**
      * Generate a Symfony Table using the passed data, and set it to the class variable for later use.
      * 
-     * @param array $data_array - a multidimensional arrays of pre defined headers and rows
+     * @param Array $data_array - a multidimensional arrays of pre defined headers and rows
      */
     private function generateQuestionTable($data_array)
     {
@@ -263,8 +263,8 @@ class UserConsoleController
      * This function takes the raw_list (aka $this->options_list) and extracts the headers.
      * If the header is too short it's inflated with empty spaces (this was an easy fix for the footer sometimes getting truncated)
      * 
-     * @param array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
-     * @return array $headers - The column headers for use in Symfony's tables
+     * @param Array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
+     * @return Array $headers - The column headers for use in Symfony's tables
      */
     private function extractHeaders($raw_list)
     {
@@ -282,9 +282,9 @@ class UserConsoleController
     /**
      * This function breaks the table rows up into pages so that the MAX_ROWS constant is adhered to
      * 
-     * @param array $rows - the complete list of rows that we want to break up into pages
-     * @param array $headers - the headers for each column of the table we're building
-     * @return array $tables - the array of pages that will eventually be turned into viewable tables for the user
+     * @param Array $rows - the complete list of rows that we want to break up into pages
+     * @param Array $headers - the headers for each column of the table we're building
+     * @return Array $tables - the array of pages that will eventually be turned into viewable tables for the user
      */
     private function paginateTableRows($rows, $headers)
     {
@@ -314,8 +314,8 @@ class UserConsoleController
      * This function appends a column to the beginning of the $raw_list array (aka $this->options_list)
      * This new column is used to help the user select a specific row when the Symfony table is drawn.
      * 
-     * @param array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
-     * @param array $new_list - Basically a copy of $raw_list, but with a new column added before the rest.
+     * @param Array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
+     * @param Array $new_list - Basically a copy of $raw_list, but with a new column added before the rest.
      */
     private function generateSelectionColumn($raw_list)
     {
@@ -344,8 +344,8 @@ class UserConsoleController
     /**
      * This function unsets any additional columns that exceed the MAX_COLUMNS constant
      * 
-     * @param array $array - $this->options_list aka the list of options statically set by whomever uses this class
-     * @return array $array - The same passed list, but with columns pruned that exceed the MAX_COLUMNS constant
+     * @param Array $array - $this->options_list aka the list of options statically set by whomever uses this class
+     * @return Array $array - The same passed list, but with columns pruned that exceed the MAX_COLUMNS constant
      */
     private function enforceColumnLimit($array)
     {
@@ -364,8 +364,8 @@ class UserConsoleController
      * drawing a Symfony table. Care is taken to ensure that empty values increment
      * the columns so that data is lined up as expected in the table.
      * 
-     * @param array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
-     * @return array $rows - A new array generated for use with the Symfony table's class
+     * @param Array $raw_list - A version of $this->options_list after it's been partially processed by $this->prepTableData()
+     * @return Array $rows - A new array generated for use with the Symfony table's class
      */
     private function generateTableRows($raw_list)
     {
