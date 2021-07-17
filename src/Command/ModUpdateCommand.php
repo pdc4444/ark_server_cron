@@ -6,9 +6,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use App\Service\StopService;
-use App\Service\UpdateService;
 use App\Service\ModService;
-use App\Service\HelperService;
 use App\Controller\UserConsoleController;
 
 class ModUpdateCommand extends Command
@@ -35,8 +33,12 @@ class ModUpdateCommand extends Command
         $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new ModService();
         $service->user_console_controller = $console_controller;
+        $stop_service = new StopService();
+        if (!empty($stop_service->running_shards)) {
+            //Stop The Server
+            $stop_service->stopSelectedServer(SELF::STOP_SERVICE_CHOICE);
+        }
         $console_controller->drawCliHeader();
-        // print_r($service->mod_list);
         $service->run();
         
         return 0;

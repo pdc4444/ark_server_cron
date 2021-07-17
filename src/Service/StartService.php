@@ -165,7 +165,7 @@ class StartService extends ShardService
 			['name' => 'Arkaeology', 'start' => 'June 15', 'end' => 'July 1'],
 			['name' => 'WinterWonderland', 'start' => 'December 18', 'end' => 'January 7'],
 			['name' => 'vday', 'start' => 'February 12', 'end' => 'February 18'],
-			['name' => 'Summer', 'start' => 'July 2', 'end' => 'July 19'],
+			['name' => 'Summer', 'start' => 'June 30', 'end' => 'July 21'],
 			['name' => 'FearEvolved', 'start' => 'October 22', 'end' => 'November 5']
 		];
 
