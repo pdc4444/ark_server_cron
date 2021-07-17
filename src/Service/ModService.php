@@ -65,7 +65,8 @@ class ModService extends ShardService
         //Download Each mod
         foreach ($this->mod_list as $mod) {
             $arg = [$this->steam_cmd, "+login anonymous", "+workshop_download_item 346110 " . $mod, "+quit"];
-            HelperService::shell_cmd($arg, $this->user_console_controller, "Downloading mod: " . $mod);
+            isset($this->user_console_controller) ? $console_controller = $this->user_console_controller : $console_controller = NULL;
+            HelperService::shell_cmd($arg, $console_controller, "Downloading mod: " . $mod);
         }
 
         //Find the steamapps folder post mod download if it did not exist before

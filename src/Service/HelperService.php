@@ -68,7 +68,7 @@ class HelperService
      * @param String $msg - A message that can be passed to customize the feedback given during process run.
      * @return String $output - A large string that contains any output captured from the running process.
      */
-    public function shell_cmd($cmd_array, $console_controller, $msg = '')
+    public function shell_cmd($cmd_array, $console_controller = NULL, $msg = '')
     {
         $process = new Process($cmd_array);
         $process->setTimeout(7200);    //2 hour total timeout
@@ -77,7 +77,7 @@ class HelperService
         $process->start();
         $output = '';
 
-        $console_controller->drawCliHeader();
+        is_null($console_controller) ? TRUE : $console_controller->drawCliHeader();
         $first_print = TRUE;
         while ($process->isRunning()) {
             // waiting for process to finish

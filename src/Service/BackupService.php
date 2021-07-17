@@ -37,7 +37,6 @@ class BackupService extends ShardService
         foreach ($this->shards_to_backup as $shard_data) {
             $this->shardBackup($shard_data);
         }
-        print_r($this->files_to_zip);
     }
 
     private function shardBackup($shard_data)

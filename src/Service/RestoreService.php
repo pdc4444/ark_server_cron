@@ -51,7 +51,8 @@ class RestoreService extends ShardService
     {
         $dir_contents = scandir($this->backup_path);
 		foreach ($dir_contents as $content) {
-			if (strpos($content, $this->shard_name) !== FALSE) {
+            $shard_name_from_file = explode("?*|_|*?", $content)[0];
+			if ($shard_name_from_file === $this->shard_name) {
 				$this->backup_file_list[] = $content;
 			}
 		}
