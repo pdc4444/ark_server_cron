@@ -7,7 +7,6 @@ use Symfony\Component\ErrorHandler\Errorhandler;
 use Symfony\Component\Console\Helper\ProgressBar;
 use App\Controller\UserConsoleController;
 use RuntimeException;
-use \ZipArchive;
 
 class RestoreService extends ShardService
 {
@@ -28,27 +27,16 @@ class RestoreService extends ShardService
         $this->determineSavedPath();
         HelperService::delTree($this->saved_path);
         $zip_file_path = $this->backup_path . DIRECTORY_SEPARATOR . $file_name;
-        $this->unzipBackup($zip_file_path);
+        HelperService::unzip($zip_file_path, $this->shootergame_path);
         HelperService::recursiveChmod($this->saved_path, 0755, 0755);
-        $this->removeComment();
+        $this->removeComment($this->saved_path);
     }
 
-    private function removeComment()
+    public function removeComment($saved_path)
     {
-        $backup_comment = $this->saved_path . DIRECTORY_SEPARATOR . 'backup_comment.txt';
+        $backup_comment = $saved_path . DIRECTORY_SEPARATOR . 'backup_comment.txt';
         if (file_exists($backup_comment)) {
             unlink($backup_comment);
-        }
-    }
-
-    private function unzipBackup($zip_file)
-    {
-        $zip = new ZipArchive;
-        if ($zip->open($zip_file) === TRUE) {
-            $zip->extractTo($this->shootergame_path);
-            $zip->close();
-        } else {
-            throw new \RuntimeException('Unable to open the zip archive. Does this path exist? ' . $zip_file);
         }
     }
 

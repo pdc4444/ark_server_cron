@@ -16,7 +16,7 @@ class ShardGeneratorService extends ShardService
 	CONST INVALID_VALUE = 'Invalid value detected, please insert a valid setting value.';
 
 	private $generated_shard_name;            //The name of the shard selected by the generateNewShardName() function.
-	private $generated_shard_location;        //The location of the shard set by the generateNewShardName() function.
+	public $generated_shard_location;         //The location of the shard set by the generateNewShardName() function.
 	private $temp_directory_name;             //The name of the temporary directory where we are building all the shard files. Should be something like 'building_#'. This is set by createNewShardDirectory()
 	private $temp_directory_location;         //The location of the temporary directory where we are building all the shard files. Also set by createNewShardDirectory()
 	private $config_file_location_array = []; //An array to the paths of each configuration file required to run an ark server shard. Set by generateConfigFiles()

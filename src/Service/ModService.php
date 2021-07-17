@@ -380,10 +380,8 @@ class ModService extends ShardService
                 $data_to_write = '';
                 $read_data = 0;
                 foreach ($compression_index as $index_array) {
-                    // print_r($index_arrays);
                     $compressed_data = fread($raw_file, $index_array['compressed']);
                     $uncompressed_data = zlib_decode($compressed_data);
-                    // var_dump($uncompressed_data);
 
                     //Verify the size of the data is consistent with the archive index
                     if (strlen($uncompressed_data) == $index_array['uncompressed']) {

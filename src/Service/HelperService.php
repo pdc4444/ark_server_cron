@@ -1,8 +1,11 @@
 <?php
 // src/Service/HelperService.php
 namespace App\Service;
+use Symfony\Component\ErrorHandler\Errorhandler;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
+use \ZipArchive;
+ErrorHandler::register();
 
 class HelperService
 {
@@ -60,10 +63,10 @@ class HelperService
      * Additionally, this function draws the cli header and keeps an elapsed timer during the duration of the process being run.
      * We return the captured output, be it stdout or stderr.
      * 
-     * @param array $cmd_array - ["echo", "this is a command"]
-     * @param object $console_controller - An instance of the UserConsoleController object.
-     * @param string $msg - A message that can be passed to customize the feedback given during process run.
-     * @return string $output - A large string that contains any output captured from the running process.
+     * @param Array $cmd_array - ["echo", "this is a command"]
+     * @param Object $console_controller - An instance of the UserConsoleController object.
+     * @param String $msg - A message that can be passed to customize the feedback given during process run.
+     * @return String $output - A large string that contains any output captured from the running process.
      */
     public function shell_cmd($cmd_array, $console_controller, $msg = '')
     {
@@ -96,8 +99,8 @@ class HelperService
     /**
      * This function takes a start time and returns the difference in H:I:S format
      * 
-     * @param object $start_time - An instance of the DateTime object that represents the start time
-     * @return string - The elapsed time in string format.
+     * @param Object $start_time - An instance of the DateTime object that represents the start time
+     * @return String - The elapsed time in string format.
      */
     public function elapsedTime($start_time)
     {
@@ -106,26 +109,40 @@ class HelperService
         return $elapsed->format("%H:%I:%S");
     }
 
+    /**
+     * This function takes a directory path and recursively deletes all files & folders in said path.
+     * 
+     * @param String $dir - The path to the directory we wish to delete
+     * @return Boolean - If the directory was successfully removed we return TRUE else FALSE
+     */
     public function delTree($dir)
     {
         $files = array_diff(scandir($dir), array('.','..'));
         foreach ($files as $file) {
-            (is_dir("$dir/$file") && !is_link($dir)) ? HelperService::delTree("$dir/$file") : unlink("$dir/$file");
+            $current_target = $dir . DIRECTORY_SEPARATOR . $file;
+            (is_dir($current_target) && !is_link($dir)) ? HelperService::delTree($current_target) : Errorhandler::call('unlink', $current_target);
         }
-        return rmdir($dir);
+        return Errorhandler::call('rmdir', $dir);
     }
 
-    public function recursiveChmod($path, $filemode, $dirmode) {
+    /**
+     * Takes a file path and recursively sets the permissions for a folder and it's children
+     * 
+     * @param String $path - The path that we want to recursively modify the permissions of
+     * @param String $file_mode - The permission settings that we want files to be. Expected format is like so: '0755'
+     * @param String $dir_mode - The permission settings that we want directories to be. Expected format is like so: '0755'
+     */
+    public function recursiveChmod($path, $file_mode, $dir_mode) {
         if (is_dir($path)) {
-            if (!chmod($path, $dirmode)) {
-                $dirmode_str = decoct($dirmode);
-                throw new \RuntimeException("Failed applying filemode '$dirmode_str' on directory '$path'\n  `-> the directory '$path' will be skipped from recursive chmod\n");
+            if (!chmod($path, $dir_mode)) {
+                $dirmode_str = decoct($dir_mode);
+                throw new \RuntimeException("Failed applying file mode '$dirmode_str' on directory '$path'\n  `-> the directory '$path' will be skipped from recursive chmod\n");
             }
             $dh = opendir($path);
             while (($file = readdir($dh)) !== false) {
                 if($file != '.' && $file != '..') {  // skip self and parent pointing directories
                     $fullpath = $path . '/' . $file;
-                    HelperService::recursiveChmod($fullpath, $filemode, $dirmode);
+                    HelperService::recursiveChmod($fullpath, $file_mode, $dir_mode);
                 }
             }
             closedir($dh);
@@ -133,10 +150,27 @@ class HelperService
             if (is_link($path)) {
                 return;
             }
-            if (!chmod($path, $filemode)) {
-                $filemode_str = decoct($filemode);
+            if (!chmod($path, $file_mode)) {
+                $filemode_str = decoct($file_mode);
                 throw new \RuntimeException("Failed applying filemode '$filemode_str' on file '$path'\n");
             }
+        }
+    }
+
+    /**
+     * Takes a zip file and extracts it to the given path
+     * 
+     * @param String $zip_file - The path to the zip file we want to extract
+     * @param String $extraction_path - The path to the where we want to extract the contents of the zip file
+     */
+    public function unzip($zip_file, $extraction_path)
+    {
+        $zip = new ZipArchive;
+        if ($zip->open($zip_file) === TRUE) {
+            $zip->extractTo($extraction_path);
+            $zip->close();
+        } else {
+            throw new \RuntimeException('Unable to open the zip archive. Does this path exist? ' . $zip_file);
         }
     }
 }

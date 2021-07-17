@@ -23,7 +23,9 @@ class ShellCommand extends Command
         'Perform Manual Backup',
         'Perform Manual Update',
         'Restore a Backup',
-        'Manual Mod Only Update'
+        'Manual Mod Only Update',
+        'Delete a shard',
+        'Import a shard'
         ]];
     CONST ANSWER_KEY = [
         'Install Root Server Files' => 'InstallCommand',
@@ -35,7 +37,9 @@ class ShellCommand extends Command
         'Perform Manual Backup' => 'BackupCommand',
         'Perform Manual Update' => 'UpdateCommand',
         'Restore a Backup' => 'RestoreCommand',
-        'Manual Mod Only Update' => 'ModUpdateCommand'
+        'Manual Mod Only Update' => 'ModUpdateCommand',
+        'Delete a shard' => 'DeleteCommand',
+        'Import a shard' => 'ShardImportCommand'
     ];
 
     public function __construct()
