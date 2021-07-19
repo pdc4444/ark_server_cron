@@ -1,1 +1,7 @@
+var/cache/*
+var/log/*
+vendor/*
 ark_server_cron.cfg
+symfony.lock
+composer.lock
+
