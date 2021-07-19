@@ -10,43 +10,41 @@ class StopService extends ShardService
     CONST POSIX_ERROR = "Unable to stop the server. Try running this command with sudo!\nError Message: ";
 
     public $running_shards;
+    private $shard_choice;
 
 	public function __construct()
-	{
+	{   
         $this->refreshRunningShards();
     }
 
-    public function stopSelectedServer($shard_choice)
+    public function stopSelectedServer($shard_choice = 'All')
     {
-        if ($shard_choice == 'All') {
+        $this->shard_choice = $shard_choice;
+        if ($this->shard_choice == 'All') {
             foreach ($this->running_shards as $name => $pid) {
                 $this->killRunningProcess($pid, SIGINT);
             }
         } else {
-            $this->killRunningProcess($this->running_shards[$shard_choice], SIGINT);
+            $this->killRunningProcess($this->running_shards[$this->shard_choice], SIGINT);
         }
-        $this->verifyServerIsStopped($shard_choice);
+        $this->verifyServerIsStopped();
     }
 
-    private function verifyServerIsStopped($shard)
+    private function verifyServerIsStopped()
     {
         $sleep_counter = 0;
         while (TRUE) {
-            $pids = [];
             $this->refreshRunningShards();
             if (empty($this->running_shards)) {
                 return;
-            }
-            if ($shard == 'All') {
-                foreach ($this->running_shards as $name => $pid) {
-                    $pids[] = $pid;
-                }
-            } else {
-                $pids[] = $this->running_shards[$shard];
+            } else if (!isset($this->running_shards[$this->shard_choice]) && $this->shard_choice !== 'All') {
+                return;
             }
             if ($sleep_counter >= 30) {
-                foreach ($pids as $server_process) {
-                    $this->killRunningProcess($server_process, SIGKILL);
+                foreach ($this->running_shards as $name => $pid) {
+                    if ($this->shard_choice == 'All' || $name == $this->shard_choice) {
+                        $this->killRunningProcess($pid, SIGKILL);
+                    }
                 }
             }
             sleep(3);

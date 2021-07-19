@@ -7,6 +7,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use App\Service\DeleteService;
 use App\Service\HelperService;
+use App\Service\StopService;
 use App\Controller\UserConsoleController;
 
 class DeleteCommand extends Command
@@ -37,6 +38,11 @@ class DeleteCommand extends Command
         $console_controller->options_list = ['Shard' => array_merge(['All'], HelperService::extractShardNames($service->shards['installed']))];
         $answer = $console_controller->askQuestion();
         $console_controller->drawCliHeader();
+
+        $stop_service = new StopService();
+        if (array_key_exists($answer['Shard'], $stop_service->running_shards)) {
+            $stop_service->stopSelectedServer($answer['Shard']);
+        }
 
         $choice = HelperService::translateAnswer($answer['Shard'], $service->shards['installed']);
         $service->processDeletion($choice);

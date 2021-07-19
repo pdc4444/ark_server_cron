@@ -75,11 +75,13 @@ class PortService extends ShardService
         return TRUE;
     }
 
-    public function writeNewPorts($shard_to_modify)
+    public function writeNewPorts($shard_by_session_name = FALSE, $shard_key = FALSE)
     {
-        // Determine the shard number
-        foreach ($this->shards['installed'] as $shard_number => $shard_name) {
-            ($shard_name == $shard_to_modify) ? $shard_key = $shard_number : FALSE;
+        if ($shard_by_session_name !== FALSE) {
+            // Determine the shard number
+            foreach ($this->shards['installed'] as $shard_number => $shard_name) {
+                ($shard_name == $shard_by_session_name) ? $shard_key = $shard_number : FALSE;
+            }
         }
 
         $shard_cfg = $this->shards[$shard_key]['cfg_file_path'][HelperService::SHARD_CONFIG];

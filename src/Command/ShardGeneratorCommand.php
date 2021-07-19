@@ -6,6 +6,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use App\Service\ShardGeneratorService;
+use App\Service\PortService;
 use App\Service\HelperService;
 use App\Controller\UserConsoleController;
 
@@ -32,7 +33,6 @@ class ShardGeneratorCommand extends Command
     {
         $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new ShardGeneratorService();
-        $raw_shard_data = $service->shards;
         $console_controller->question = SELF::USER_QUESTION;
         $console_controller->help_text = SELF::HELP_TEXT;
         $console_controller->options_list = ['?' => ['Yes', 'No']];
@@ -43,6 +43,19 @@ class ShardGeneratorCommand extends Command
             $service->configureBuild($console_controller);
         }
         $service->finalizeBuild();
+
+        if ($service->port_range != '') {
+            //check to see if we have the port range configuration set and then ask if the user wants ports auto allocated.
+            $port_service = new PortService();
+            $port_service->console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
+            $reallocate_ports = $port_service->performUserCheck();
+            $console_controller->drawCliHeader();
+            if ($reallocate_ports === TRUE && $port_service->portAllocation() === TRUE) {
+                $port_service->writeNewPorts(FALSE, $service->generated_shard_name);
+            } else {
+                $output->writeln($port_service::ALLOCATION_FAILURE);
+            }
+        }
         
         return 0;
     }

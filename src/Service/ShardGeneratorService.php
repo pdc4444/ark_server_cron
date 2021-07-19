@@ -15,7 +15,7 @@ class ShardGeneratorService extends ShardService
 	CONST USER_CFG_STRING = 'Please define the value for this setting: ';
 	CONST INVALID_VALUE = 'Invalid value detected, please insert a valid setting value.';
 
-	private $generated_shard_name;            //The name of the shard selected by the generateNewShardName() function.
+	public $generated_shard_name;             //The name of the shard selected by the generateNewShardName() function.
 	public $generated_shard_location;         //The location of the shard set by the generateNewShardName() function.
 	private $temp_directory_name;             //The name of the temporary directory where we are building all the shard files. Should be something like 'building_#'. This is set by createNewShardDirectory()
 	private $temp_directory_location;         //The location of the temporary directory where we are building all the shard files. Also set by createNewShardDirectory()
