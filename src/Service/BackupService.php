@@ -63,7 +63,7 @@ class BackupService extends ShardService
     {
         if ($selected_shard == 'All') {
             foreach ($this->shards as $shard_name => $shard_data) {
-                if (strpos($shard_name, 'shard_') !== FALSE) {
+                if (strpos($shard_name, 'shard_') !== FALSE && $shard_data[HelperService::SHARD_CONFIG]['ShardSettings']['enabled'] == '1') {
                     $this->shards_to_backup[$shard_name]['Path'] = $shard_data['Path'] . SELF::SAVED_PATH_FRAGMENT;
                     $this->shards_to_backup[$shard_name]['SessionName'] = $shard_data[HelperService::GAME_CONFIG]['SessionSettings']['SessionName'];;
                 }

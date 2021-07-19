@@ -42,7 +42,9 @@ class AutoService extends ShardService
 
     private function backup()
     {
-        $total_shards = count($this->shards['installed']);
+        $service = $this;
+        $service = HelperService::enabledCheck($service);
+        $total_shards = count($service->shards['installed']);
         
         $descriptors = array(
             0 => array('pipe', 'r'),
@@ -55,7 +57,7 @@ class AutoService extends ShardService
         $progress = 1;
         $binary = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'console';
         
-        foreach ($this->shards['installed'] as $shard) {
+        foreach ($service->shards['installed'] as $shard) {
             if ($process_count <= SELF::PROCESS_LIMIT) {
                 $command = $binary . ' backup ' . $shard . ' auto_service';
                 $proc = proc_open($command, $descriptors, $pipes, NULL);

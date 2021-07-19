@@ -89,6 +89,9 @@ class StartService extends ShardService
     {
         foreach ($this->shards as $key_name => $data) {
             if (strpos($key_name, 'shard_') !== FALSE && $this->errorCheck($this->shards[$key_name], $key_name) === FALSE) {
+                if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['enabled'] != '1') {
+                    continue;
+                }
                 $string = $this->shards[$key_name]['Path'] . SELF::BINARY_PATH;
                 $string = $string . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['Server_Map'] . SELF::LISTEN;
                 $string = $string . SELF::QUERY . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['QueryPort'];

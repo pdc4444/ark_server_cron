@@ -45,7 +45,6 @@ class RestartCommand extends Command
 
             //Start The Server
             $start_service = new StartService();
-            $raw_shard_data = $start_service->shards;
             $choice = HelperService::translateAnswer($answer['Shard'], $start_service->shards['installed']);
             $servers = $start_service->startServers($choice);
             if (!empty($servers)) {

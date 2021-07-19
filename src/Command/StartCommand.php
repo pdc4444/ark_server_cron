@@ -33,8 +33,8 @@ class StartCommand extends Command
     {
         $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new StartService();
-        $raw_shard_data = $service->shards;
         $console_controller->question = SELF::USER_QUESTION;
+        $service = HelperService::enabledCheck($service);
         $console_controller->options_list = ['Shard' => array_merge(['All'], HelperService::extractShardNames($service->shards['installed']))];
         $answer = $console_controller->askQuestion();
         $console_controller->drawCliHeader();

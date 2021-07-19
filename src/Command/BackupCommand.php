@@ -45,6 +45,7 @@ class BackupCommand extends Command
         if ($cli_shard === NULL) {
             $console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
             $console_controller->question = SELF::QUERY;
+            $service = HelperService::enabledCheck($service);
             $console_controller->options_list = ['Shard' => array_merge(['All'], HelperService::extractShardNames($service->shards['installed']))];
             $console_controller->help_text = SELF::CONTEXT;
             $chosen_shard = $console_controller->askQuestion();

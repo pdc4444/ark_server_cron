@@ -28,6 +28,7 @@ class ModService extends ShardService
     private $mod_meta_data = [];         //This variable resets after the start of each mods processing. When we process the modmeta.info file each key -> value is stored here for reference later.
     private $filesystem;                 //An instance of Symfony's Filesystem class. Used for moving mods into their correct location
     private $current_work;               //The current absolute path to the mod we're working on. Used to report an issue if a problem occurs.
+    private $no_mods = FALSE;            //If no mods are found then this flag turns off the rest of the code in mod service
 
     public function __construct()
     {
@@ -41,12 +42,17 @@ class ModService extends ShardService
     private function compileModList()
     {
         foreach ($this->shards as $key => $shard_data) {
-            if (strpos($key, 'shard') !== FALSE && array_key_exists('activemods', $shard_data[HelperService::GAME_CONFIG]['ServerSettings'])) {
+            if (strpos($key, 'shard') !== FALSE && array_key_exists('activemods', $shard_data[HelperService::GAME_CONFIG]['ServerSettings']) && $shard_data[HelperService::SHARD_CONFIG]['ShardSettings']['enabled'] == '1') {
                 $shard_mods = str_replace(' ', '', $shard_data[HelperService::GAME_CONFIG]['ServerSettings']['activemods']);
                 isset($mods) ? $mods = $mods . ',' . $shard_mods : $mods = $shard_mods;
             }
         }
-        $this->mod_list = array_unique(explode(',', $mods));
+        if (isset($mods)) {
+            $this->mod_list = array_unique(explode(',', $mods));
+        } else {
+            $this->no_mods = TRUE;
+        }
+
     }
 
     /**
@@ -54,6 +60,10 @@ class ModService extends ShardService
      */
     public function run()
     {
+        if ($this->no_mods === TRUE) {
+            return;
+        }
+
         //Find the steamapps folder
         $this->findSteamApps();
 

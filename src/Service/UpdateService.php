@@ -61,7 +61,12 @@ class UpdateService extends ShardService
     {
         $filesystem = new Filesystem();
         $shard_generator = new ShardGeneratorService(FALSE);
-        $shards = array_column($this->shards, 'Path');
+        $shards = [];
+        foreach ($this->shards as $key => $shard_data) {
+            if ($key != 'installed' && $shard_data[HelperService::SHARD_CONFIG]['ShardSettings']['enabled'] == '1') {
+                $shards[] = $shard_data['Path'];
+            }
+        }
         foreach ($shards as $shard) {
             $shard_path = '/' . trim($shard, '/');
             $shard_path_parts = explode('/', $shard_path);

@@ -35,6 +35,17 @@ class HelperService
         }
     }
 
+    public function enabledCheck($service)
+    {
+        //Check to see if the shard is enabled or not
+        foreach ($service->shards as $key => $shard_info) {
+            if ($key !== 'installed' && $shard_info[HelperService::SHARD_CONFIG]['ShardSettings']['enabled'] != '1') {
+                unset($service->shards['installed'][$key]);
+            }
+        }
+        return $service;
+    }
+
     public function summarizeShardInfo($raw_shard_data)
     {
         $important_shard_data = [];
@@ -49,6 +60,8 @@ class HelperService
                 $important_shard_data[$shard_name]['Session Name'] = $shard_data[SELF::GAME_CONFIG]['SessionSettings']['SessionName'];
                 $important_shard_data[$shard_name]['Session Password'] = $shard_data[SELF::GAME_CONFIG]['ServerSettings']['ServerPassword'];
                 $important_shard_data[$shard_name]['Max Players'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['MaxPlayers'];
+                ($shard_data[SELF::SHARD_CONFIG]['ShardSettings']['enabled'] == '1') ? $enabled = 'Yes' : $enabled = 'No';
+                $important_shard_data[$shard_name]['Shard Enabled'] = $enabled;
                 $important_shard_data[$shard_name]['Running'] = $shard_data['Status']['Running'];
                 $important_shard_data[$shard_name]['Process Id'] = $shard_data['Status']['Process Id'];
                 if (isset($shard_data[SELF::GAME_CONFIG]['ServerSettings']['activemods'])) {
