@@ -7,6 +7,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use App\Service\ShardImportService;
 use App\Service\HelperService;
+use App\Service\PortService;
 use App\Controller\UserConsoleController;
 
 class ShardImportCommand extends Command
@@ -39,6 +40,18 @@ class ShardImportCommand extends Command
         $answer = $console_controller->askQuestion();
         $console_controller->drawCliHeader();
         if ($service->run($answer)) {
+            if ($service->port_range != '') {
+                //check to see if we have the port range configuration set and then ask if the user wants ports auto allocated.
+                $port_service = new PortService();
+                $port_service->console_controller = $console_controller;
+                $reallocate_ports = $port_service->performUserCheck();
+                $console_controller->drawCliHeader();
+                if ($reallocate_ports === TRUE && $port_service->portAllocation() === TRUE) {
+                    $port_service->writeNewPorts($service->new_shard_name);
+                } else {
+                    $output->writeln($port_service::ALLOCATION_FAILURE);
+                }
+            }
             $output->writeln(SELF::SUCCESS);
         } else {
             $output->writeln(SELF::FAILURE);

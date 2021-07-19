@@ -15,10 +15,11 @@ class InstallService extends ShardService
         'B' => 'ark_server_shards',
         'C' => 'ark_server_backup',
         'D' => 'ark_server_cluster',
-        'E' => 'steam_cmd'
+        'E' => 'steam_cmd',
+        'F' => 'port_range'
     ];
 
-    public $install_directories = [];
+    public $general_config = [];
 
 	public function __construct()
 	{
@@ -45,7 +46,7 @@ class InstallService extends ShardService
         if (empty($result)) {
             throw new \RuntimeException('steamcmd was not found. Make sure it is installed and referenced in your bash $HOME.');
         } else {
-            $this->install_directories['E'] = $result;
+            $this->general_config['E'] = $result;
         }
     }
 
@@ -53,7 +54,7 @@ class InstallService extends ShardService
     {
         $file_contents = "";
         foreach (SELF::CONFIG_FILE_VARS as $key => $variable) {
-            $file_contents = $file_contents . $variable . "=" . $this->install_directories[$key] . "\n";
+            $file_contents = $file_contents . $variable . "=" . $this->general_config[$key] . "\n";
         }
         $file_contents = trim($file_contents);
         file_put_contents($this->root_dir . HelperService::CRON_CONFIG, $file_contents);
@@ -62,8 +63,8 @@ class InstallService extends ShardService
     private function materializeTheDirectories()
     {
         foreach (SELF::CONFIG_FILE_VARS as $key => $variable) {
-            if (!file_exists($this->install_directories[$key])) {
-                mkdir($this->install_directories[$key], 0775, TRUE);
+            if (!file_exists($this->general_config[$key])) {
+                mkdir($this->general_config[$key], 0775, TRUE);
             }
         }
     }

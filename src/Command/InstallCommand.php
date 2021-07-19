@@ -14,11 +14,12 @@ class InstallCommand extends Command
     protected static $defaultName = 'install';
     protected $console_controller;
     CONST SERVICE_TITLE = "Ark Server Cron Installer";
-    CONST INSTALL_DIRECTORIES = [
+    CONST GENERAL_CONFIG = [
         'A' => 'ark_server_files',
         'B' => 'ark_server_shards',
         'C' => 'ark_server_backups',
-        'D' => 'ark_server_cluster'
+        'D' => 'ark_server_cluster',
+        'F' => 'port_range'
     ];
     CONST USER_QUESTION_A = "Where would you like to install the ark server files?";
     CONST HELP_TEXT_A = "The ark server files are the meat of the install and will be referenced by all server shards.";
@@ -28,6 +29,8 @@ class InstallCommand extends Command
     CONST HELP_TEXT_C = "Ark Server Cron has functionality to compress and backup the saved files of every server shard.";
     CONST USER_QUESTION_D = "Where would you like to store your shard cluster information?";
     CONST HELP_TEXT_D = "If you plan on hosting multiple maps, you can enable server clustering to allow player uploads / downloads only within your cluster.";
+    CONST USER_QUESTION_F = "You can define a range of ports to have Ark Server Cron automatically define ports for new shards. You will of course have to make sure your router has these ports forwarded for you.";
+    CONST HELP_TEXT_F = "Example port range: '60000 - 60125'";
     CONST CUSTOM_STRING = 'Please define your custom path. Expected example: /path/to/directory';
 
     public function __construct()
@@ -47,7 +50,7 @@ class InstallCommand extends Command
         $this->console_controller = new UserConsoleController(SELF::SERVICE_TITLE, $output);
         $service = new InstallService();
 
-        foreach (SELF::INSTALL_DIRECTORIES as $key => $item) {
+        foreach (SELF::GENERAL_CONFIG as $key => $item) {
             $question = constant("SELF::USER_QUESTION_" . $key);
             $help = constant("SELF::HELP_TEXT_" . $key);
             $options = ['?' => ["~/" . $item . ' (Default)', 'Custom']];
@@ -57,7 +60,7 @@ class InstallCommand extends Command
             } else {
                 $answer = $this->cycleThroughQuestions(SELF::CUSTOM_STRING);
             }
-            $service->install_directories[$key] = $answer;
+            $service->general_config[$key] = $answer;
         }
         $service->beginInstallation();
         return 0;

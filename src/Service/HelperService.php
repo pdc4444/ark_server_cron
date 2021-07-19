@@ -43,6 +43,7 @@ class HelperService
                 $important_shard_data[$shard_name]['Shard Number'] = $shard_name;
                 $important_shard_data[$shard_name]['Query Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['QueryPort'];
                 $important_shard_data[$shard_name]['Game Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['GamePort'];
+                $important_shard_data[$shard_name]['UDP Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['UdpPort'];
                 $important_shard_data[$shard_name]['RCON Port'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['RCONPort'];
                 $important_shard_data[$shard_name]['Map'] = $shard_data[SELF::SHARD_CONFIG]['ShardSettings']['Server_Map'];
                 $important_shard_data[$shard_name]['Session Name'] = $shard_data[SELF::GAME_CONFIG]['SessionSettings']['SessionName'];

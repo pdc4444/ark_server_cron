@@ -43,6 +43,7 @@ class ShardService
     public $cluster_directory = FALSE;           //The path to where the cluster data is stored
     public $shards;                              //The path to where each individual shard is stored
     public $root_dir;                            //The directory where the ark server cron files live
+    public $port_range;                          //The port range that the ark server shards will use
 	
     /**
      * Start the service by checking to see if the configuration file is present.
@@ -102,6 +103,9 @@ class ShardService
                 break;
             case 'ark_server_cluster':
                 $this->cluster_directory = $value;
+                break;
+            case 'port_range':
+                $this->port_range = $value;
                 break;
 		}
     }

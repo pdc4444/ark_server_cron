@@ -13,6 +13,8 @@ ErrorHandler::register();
 class ShardImportService extends ShardService
 {
 	CONST TEMP_PATH = DIRECTORY_SEPARATOR . 'tmp' . DIRECTORY_SEPARATOR;
+
+	public $new_shard_name;
 	
 	public function __construct()
 	{
@@ -37,8 +39,8 @@ class ShardImportService extends ShardService
 			array_key_exists('installed', $this->shards) ? $shard_names = array_values($this->shards['installed']) : $shard_names = [];
 			$game_config_loc = $extracted_folder . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'LinuxServer' . DIRECTORY_SEPARATOR . HelperService::GAME_CONFIG;
 			$extracted_shard_name = $this->extractShardName($game_config_loc);
-			$new_shard_name = $this->shardNameChecker($extracted_shard_name, $shard_names);
-			($new_shard_name == $extracted_shard_name) ? TRUE : $this->writeNewShardName($game_config_loc, $new_shard_name);
+			$this->shardNameChecker($extracted_shard_name, $shard_names);
+			($this->new_shard_name == $extracted_shard_name) ? TRUE : $this->writeNewShardName($game_config_loc, $this->new_shard_name);
 
 			//move the saved directory to the new proper location
 			$new_shard_saved_location = $shard_generator->generated_shard_location . DIRECTORY_SEPARATOR . 'ShooterGame' . DIRECTORY_SEPARATOR . 'Saved';
@@ -61,7 +63,7 @@ class ShardImportService extends ShardService
 			$potential_name = $chosen_name . '_' . $counter;
 			$counter++;
 		}
-		return $potential_name;
+		$this->new_shard_name = $potential_name;
 	}
 
 	private function extractShardName($game_config_loc)
