@@ -6,7 +6,6 @@ use App\Service\HelperService;
 use Symfony\Component\ErrorHandler\Errorhandler;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 ErrorHandler::register();
 
 /**
@@ -21,7 +20,7 @@ class ModService extends ShardService
     CONST GENERAL_ERROR = "Error while attempting to extract the mod_archive for this mod: ";
 
     private $mod_list;                   //This is an array of mod ids populated by the compileModListFunction()
-    private $steamapps_location;         //This is the absolute location of the steamapps folder which is populated by the findSteamApps() function
+    private $steamapps_location;         //This is the absolute location of the steamapps folder. We manually set this during the call to steamcmd.
     private $absolute_path_to_mods = []; //After we use steamcmd to download the mods the full paths to each mod folder is stored in here
     private $z_file_list = [];           //This is a variable which is reset at the start of every individual mod decompression. It stores the absolute path to each .z file found when a specific mod is examined.
     private $mod_map_names = [];         //This variable resets after the start of each mods processing. This variable contains the name of the mod as read from the mod.info file
@@ -64,17 +63,16 @@ class ModService extends ShardService
             return;
         }
 
-        //Find the steamapps folder
-        $this->findSteamApps();
+        //Define the steamapps folder location
+        $this->steamapps_location = $this->root_server_files . DIRECTORY_SEPARATOR . 'steamapps';
 
         // Remove the steamapps folder if it exists
         if (file_exists($this->steamapps_location)) {
             HelperService::delTree($this->steamapps_location);
         }
-
         //Download Each mod
         foreach ($this->mod_list as $mod) {
-            $arg = [$this->steam_cmd, "+login anonymous", "+workshop_download_item 346110 " . $mod, "+quit"];
+            $arg = [$this->steam_cmd, "+login anonymous", "+force_install_dir " . $this->root_server_files, "+workshop_download_item 346110 " . $mod, "+quit"];
             isset($this->user_console_controller) ? $console_controller = $this->user_console_controller : $console_controller = NULL;
             HelperService::shell_cmd($arg, $console_controller, "Downloading mod: " . $mod);
         }
@@ -106,7 +104,7 @@ class ModService extends ShardService
             $this->compileMod($mod_file_location, $mod_id);
             $this->placeMods($mod_id, $base_mod_path);
         }
-
+    
     }
 
     /**
@@ -285,27 +283,6 @@ class ModService extends ShardService
                 $this->absolute_path_to_mods[] = $absolute_path;
             }
         }
-    }
-
-    /**
-     * Through Symfony's Finder() class we attempt to find the steamapps folder in the root directory of the filesystem.
-     * This function may take a little while depending on how many files the server has. At the moment I cannot think of a 
-     * better way to find the steamapps folder. Finding this folder is required to start parsing through the downloaded mods
-     * $this->steamapps_location is populated by this function.
-     */
-    private function findSteamApps()
-    {
-        $directory = '/';
-        $finder = new Finder();
-        $finder->name('steamapps');
-        $finder->ignoreUnreadableDirs()->directories()->in($directory)->exclude([trim($this->root_server_files, '/'), trim($this->server_shard_directory,'/')]);
-        $found = FALSE;
-        if ($finder->hasResults()) {
-            foreach($finder as $dir) {
-                empty($found) ? $found = $dir->getRealPath() : FALSE;
-            }
-        }
-        $this->steamapps_location = $found;
     }
 
     /**
