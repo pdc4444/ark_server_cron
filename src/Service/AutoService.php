@@ -6,6 +6,8 @@ use App\Service\StopService;
 use App\Service\UpdateService;
 use App\Service\ModService;
 use App\Service\StartService;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 use Symfony\Component\ErrorHandler\Errorhandler;
 ErrorHandler::register();
 
@@ -45,46 +47,29 @@ class AutoService extends ShardService
         $service = $this;
         $service = HelperService::enabledCheck($service);
         $total_shards = count($service->shards['installed']);
-        
-        $descriptors = array(
-            0 => array('pipe', 'r'),
-            1 => array('pipe', 'w'),
-            2 => array('pipe', 'w')
-        );
 
         $process_count = 0;
-        $status = [];
         $progress = 1;
         $binary = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'console';
+        $queued_jobs = [];
         
         foreach ($service->shards['installed'] as $shard) {
             if ($process_count <= SELF::PROCESS_LIMIT) {
-                $command = $binary . ' backup ' . $shard . ' auto_service';
-                $proc = proc_open($command, $descriptors, $pipes, NULL);
-                $status[] = $proc;
+                $queued_jobs[] = new Process([$binary, 'backup', $shard, 'auto_service']);
                 $process_count++;
             }
             if ($process_count >= SELF::PROCESS_LIMIT || $progress == $total_shards) {
-                $complete_processes = $this->process_limiter($status);
-                $process_count = $process_count - $complete_processes;
+                foreach ($queued_jobs as $job) {
+                    $job->start();
+                }
+                foreach ($queued_jobs as $job) {
+                    while ($job->isRunning()) {
+                        sleep(5);
+                    }
+                }
+                $queued_jobs = [];
             }
             $progress++;
         }
-    }
-
-    private function process_limiter($process_statuses)
-    {
-        $complete_processes = 0;
-        foreach ($process_statuses as $current_process) {
-            while (TRUE) {
-                $current_status = proc_get_status($current_process);
-                if ($current_status['running'] != 1 || is_null($current_status['running'])) {
-                    $complete_processes++;
-                    continue 2;
-                }
-                sleep(5);
-            }
-        }
-        return $complete_processes;
     }
 }
