@@ -99,7 +99,7 @@ class StartService extends ShardService
                 $string = $string . SELF::RCON . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['RCONPort'];
                 $string = $string . SELF::PLAYERS . $this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['MaxPlayers'];
                 $string = $string . SELF::RAW_SOCKETS;
-                if ($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['battle_eye'] == 'false') {
+                if (strtolower($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['battle_eye']) == 'false') {
                     $string = $string . SELF::BATTLE_EYE;
                 }
                 if ($this->cluster_directory !== FALSE && strtolower($this->shards[$key_name][HelperService::SHARD_CONFIG]['ShardSettings']['Cluster_Mode']) == 'true') {

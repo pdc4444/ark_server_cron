@@ -195,7 +195,7 @@ class ShardService
     {
         $pid = '';
         $running = 'No';
-	$shell_cmd = 'ps ax | grep -i shootergame | grep -vi grep | grep /' . $shard . '/';
+	    $shell_cmd = 'ps ax | grep -i shootergame | grep -vi grep | grep /' . $shard . '/';
         $results = ErrorHandler::call('shell_exec', $shell_cmd);
         if ($results !== NULL) {
             $pid = $this->isolatePID($results);
