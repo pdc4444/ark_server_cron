@@ -14,7 +14,7 @@ class HelperService
     CONST GAME_INI = 'Game.ini';
     CONST CRON_CONFIG = 'ark_server_cron.cfg';
 
-    public function extractShardNames($shard_array)
+    public static function extractShardNames($shard_array)
     {   
         $shards = [];
         foreach ($shard_array as $shard) {
@@ -23,7 +23,7 @@ class HelperService
         return $shards;
     }
 
-    public function translateAnswer($user_choice, $shard_array)
+    public static function translateAnswer($user_choice, $shard_array)
     {
         if ($user_choice == 'All') {
             return $user_choice;
@@ -35,7 +35,7 @@ class HelperService
         }
     }
 
-    public function enabledCheck($service)
+    public static function enabledCheck($service)
     {
         //Check to see if the shard is enabled or not
         foreach ($service->shards as $key => $shard_info) {
@@ -46,9 +46,9 @@ class HelperService
         return $service;
     }
 
-    public function summarizeShardInfo($raw_shard_data)
+    public static function summarizeShardInfo($raw_shard_data)
     {
-        $important_shard_data = [];
+	$important_shard_data = [];
         foreach ($raw_shard_data as $shard_name => $shard_data) {
             if ($shard_name != 'installed') {
                 $important_shard_data[$shard_name]['Shard Number'] = $shard_name;
@@ -82,7 +82,7 @@ class HelperService
      * @param String $msg - A message that can be passed to customize the feedback given during process run.
      * @return String $output - A large string that contains any output captured from the running process.
      */
-    public function shell_cmd($cmd_array, $console_controller = NULL, $msg = '')
+    public static function shell_cmd($cmd_array, $console_controller = NULL, $msg = '')
     {
         $process = new Process($cmd_array);
         $process->setTimeout(7200);    //2 hour total timeout
@@ -116,7 +116,7 @@ class HelperService
      * @param Object $start_time - An instance of the DateTime object that represents the start time
      * @return String - The elapsed time in string format.
      */
-    public function elapsedTime($start_time)
+    public static function elapsedTime($start_time)
     {
         $now = new \DateTime();
         $elapsed = $now->diff($start_time);
@@ -129,7 +129,7 @@ class HelperService
      * @param String $dir - The path to the directory we wish to delete
      * @return Boolean - If the directory was successfully removed we return TRUE else FALSE
      */
-    public function delTree($dir)
+    public static function delTree($dir)
     {
         $files = array_diff(scandir($dir), array('.','..'));
         foreach ($files as $file) {
@@ -146,7 +146,7 @@ class HelperService
      * @param String $file_mode - The permission settings that we want files to be. Expected format is like so: '0755'
      * @param String $dir_mode - The permission settings that we want directories to be. Expected format is like so: '0755'
      */
-    public function recursiveChmod($path, $file_mode, $dir_mode) {
+    public static function recursiveChmod($path, $file_mode, $dir_mode) {
         if (is_dir($path)) {
             if (!chmod($path, $dir_mode)) {
                 $dirmode_str = decoct($dir_mode);
@@ -177,7 +177,7 @@ class HelperService
      * @param String $zip_file - The path to the zip file we want to extract
      * @param String $extraction_path - The path to the where we want to extract the contents of the zip file
      */
-    public function unzip($zip_file, $extraction_path)
+    public static function unzip($zip_file, $extraction_path)
     {
         $zip = new ZipArchive;
         if ($zip->open($zip_file) === TRUE) {
